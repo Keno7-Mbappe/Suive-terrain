@@ -29,6 +29,12 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
 
+# En local (DEBUG=True), pas de HTTPS -> ces reglages casseraient le login.
+# En production, on force les cookies "Secure" et la redirection HTTPS.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
