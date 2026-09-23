@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Insertions &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Insertions</h1>
+        <p>{{ page_obj.paginator.count }} insertion(s) &middot; {{ nb_emploi }} emploi salarié &middot; {{ nb_auto_emploi }} auto-emploi &middot; {{ nb_recherche }} en recherche</p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'insertions:creer' %}" class="primary-button">+ Nouvelle insertion</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Bénéficiaire</th><th>Situation</th><th>Date</th><th>Délai (mois)</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for i in insertions %}
+            <tr>
+                <td>{{ i.beneficiaire }}</td>
+                <td>{{ i.get_situation_prof_display }}</td>
+                <td>{{ i.date_insertion }}</td>
+                <td>{{ i.delai_insertion_mois|default:"-" }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'insertions:modifier' i.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="empty-state">Aucune insertion enregistrée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

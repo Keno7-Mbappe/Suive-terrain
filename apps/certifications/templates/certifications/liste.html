@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Certifications &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Certifications</h1>
+        <p>{{ page_obj.paginator.count }} certification(s) délivrée(s) &middot; {{ nb_types }} type(s) de certificat</p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'certifications:creer' %}" class="primary-button">+ Nouvelle certification</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Bénéficiaire</th><th>Type de certificat</th><th>Date</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for c in certifications %}
+            <tr>
+                <td>{{ c.beneficiaire }}</td>
+                <td>{{ c.type_certificat }}</td>
+                <td>{{ c.date_certification }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'certifications:modifier' c.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="empty-state">Aucune certification enregistrée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

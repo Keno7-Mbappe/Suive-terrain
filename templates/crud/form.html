@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ titre }} &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="form-page">
+    <div class="panel form-panel" style="--accent: var(--c1-blue)">
+        <h3>{{ titre }}</h3>
+        {% if form.non_field_errors %}
+        <div class="form-alert">{{ form.non_field_errors|join:" " }}</div>
+        {% endif %}
+        <form method="post" class="crud-form" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-actions">
+                <button type="submit" class="primary-button">Enregistrer</button>
+                <a href="{{ retour_url }}" class="secondary-button">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

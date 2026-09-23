@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Résultats du programme &ndash; PDCED Skills{% endblock %}
+
+{% block content %}
+
+<div class="hero hero-public">
+    <div>
+        <span class="hero-eyebrow">Transparence &middot; ONEQ / MENFOP</span>
+        <h1>Résultats du programme de formation professionnelle</h1>
+        <p>Suivi public de l'insertion et de la satisfaction des bénéficiaires &mdash; EFTP, INAP, ANEFIP</p>
+    </div>
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="cycle">Cycle</label>
+            <select name="cycle" id="cycle" onchange="this.form.submit()">
+                <option value="">Tous les cycles</option>
+                {% for cycle in cycles %}
+                <option value="{{ cycle.id }}" {% if filtre_cycle == cycle.id|stringformat:"s" %}selected{% endif %}>{{ cycle.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="institution">Institution</label>
+            <select name="institution" id="institution" onchange="this.form.submit()">
+                <option value="">Toutes les institutions</option>
+                {% for institution in institutions %}
+                <option value="{{ institution.id }}" {% if filtre_institution == institution.id|stringformat:"s" %}selected{% endif %}>{{ institution.libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% include "dashboard/_kpis_et_graphiques.html" %}
+
+<div class="public-footer">
+    <p>Données agrégées et anonymisées &middot; aucune information individuelle n'est publiée.</p>
+    <a href="{% url 'login' %}" class="secondary-button">Espace institutions &rarr;</a>
+</div>
+
+{% endblock %}

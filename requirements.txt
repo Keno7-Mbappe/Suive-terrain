@@ -1,0 +1,14 @@
+Django==6.0.5
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+psycopg2-binary==2.9.11
+dj-database-url==3.1.2
+python-dotenv==1.2.2
+whitenoise==6.11.0
+gunicorn==25.3.0
+requests==2.32.5
+pandas==2.3.3
+openpyxl==3.1.5
+
+# Outillage (generation/validation des formulaires KoboToolbox) - pas requis a l'execution du site
+pyxform==4.5.0

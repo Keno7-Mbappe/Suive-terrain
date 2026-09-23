@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Connexion &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-brand">
+        <span class="login-logo"></span>
+        <strong>PDCED &ndash; Skills</strong>
+    </div>
+    <h1>Connexion</h1>
+    {% if form.errors %}
+    <div class="form-alert">Identifiants incorrects.</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="id_username">Utilisateur</label>
+        <input type="text" name="username" id="id_username" required autofocus>
+        <label for="id_password">Mot de passe</label>
+        <input type="password" name="password" id="id_password" required>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit">Se connecter</button>
+    </form>
+</div>
+{% endblock %}

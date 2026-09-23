@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Suivis &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Suivis</h1>
+        <p>{{ page_obj.paginator.count }} contact(s) &middot; {{ nb_joints }} joint(s) &middot; {{ taux_joignabilite }}% de joignabilité</p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'suivis:creer' %}" class="primary-button">+ Nouveau suivi</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Bénéficiaire</th><th>Vague</th><th>Date</th><th>Issue du contact</th><th>Situation</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for s in suivis %}
+            <tr>
+                <td>{{ s.beneficiaire }}</td>
+                <td>{{ s.get_vague_display }}</td>
+                <td>{{ s.date_suivi }}</td>
+                <td>{{ s.get_issue_contact_display }}</td>
+                <td>{{ s.get_situation_actuelle_display|default:"-" }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'suivis:modifier' s.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-state">Aucun suivi enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

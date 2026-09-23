@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Bénéficiaires &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Bénéficiaires</h1>
+        <p>{{ page_obj.paginator.count }} enregistré(s) &middot; {{ nb_actifs }} actif(s) &middot; {{ nb_femmes }} femmes / {{ nb_hommes }} hommes</p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'beneficiaires:creer' %}" class="primary-button">+ Nouveau bénéficiaire</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>Nom</th><th>Prénom</th><th>Sexe</th><th>Région</th><th>Institution</th><th>Statut</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in beneficiaires %}
+            <tr>
+                <td>{{ b.id_beneficiaire }}</td>
+                <td>{{ b.nom }}</td>
+                <td>{{ b.prenom }}</td>
+                <td>{{ b.get_sexe_display }}</td>
+                <td>{{ b.get_region_display }}</td>
+                <td>{{ b.institution }}</td>
+                <td>{{ b.get_statut_display }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'beneficiaires:modifier' b.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="empty-state">Aucun bénéficiaire enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Rapports &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Rapports</h1>
+        <p>Export Excel complet par cycle d'enquête &mdash; synthèse, bénéficiaires, satisfaction et qualité des données</p>
+    </div>
+</div>
+<div class="grid cols-2">
+    {% for cycle in cycles %}
+    <div class="panel" style="--accent: {% cycle 'var(--c1-blue)' 'var(--c3-aqua)' 'var(--c7-violet)' %}">
+        <h3>{{ cycle.libelle }}</h3>
+        <div class="panel-sub">{{ cycle.date_debut }} &rarr; {{ cycle.date_fin }}</div>
+        {% if user.profile.is_validateur %}
+        <a href="{% url 'reporting:cycle_excel' cycle.pk %}" class="primary-button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            Télécharger (.xlsx)
+        </a>
+        {% else %}
+        <p class="panel-sub" style="margin-top:2px;">Export réservé aux validateurs</p>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="panel"><p class="empty-state">Aucun cycle d'enquête configuré.</p></div>
+    {% endfor %}
+</div>
+{% endblock %}

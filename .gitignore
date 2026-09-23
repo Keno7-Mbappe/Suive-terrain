@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+.env
+db.sqlite3
+staticfiles/
+
+# Listes de choix Kobo régénérées à la demande (contiennent des données
+# nominatives : nom/prénom des bénéficiaires) - ne doivent jamais être
+# versionnées, à régénérer via `manage.py export_kobo_choices`.
+kobo_forms/media/*.csv
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: pdced-skills
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    preDeployCommand: "python manage.py migrate"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.13.3"
+      # Renseignes dans le tableau de bord Render au premier déploiement
+      # (jamais dans ce fichier, qui est versionné) :
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: KOBO_API_BASE_URL
+        value: "https://kf.kobotoolbox.org"
+      - key: KOBO_API_TOKEN
+        sync: false
+      - key: KOBO_ASSET_UID_SUIVI
+        sync: false
+      - key: KOBO_ASSET_UID_SATISFACTION
+        sync: false
+      - key: KOBO_ASSET_UID_SATISFACTION_INSTITUTION
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

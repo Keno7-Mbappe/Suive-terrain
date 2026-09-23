@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Satisfactions &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Satisfaction des bénéficiaires</h1>
+        <p>{{ page_obj.paginator.count }} réponse(s) &middot; note moyenne {{ note_moyenne|default:"–" }}/5 &middot; <a href="{% url 'satisfactions:liste_institution' %}">voir la satisfaction institutionnelle &rarr;</a></p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'satisfactions:creer' %}" class="primary-button">+ Nouvelle réponse</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Bénéficiaire</th><th>Cycle</th><th>Note globale</th><th>Recommande</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for s in satisfactions %}
+            <tr>
+                <td>{{ s.beneficiaire }}</td>
+                <td>{{ s.cycle }}</td>
+                <td>{{ s.note_globale }}/5</td>
+                <td>{{ s.recommande|yesno:"Oui,Non" }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'satisfactions:modifier' s.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="empty-state">Aucune réponse enregistrée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

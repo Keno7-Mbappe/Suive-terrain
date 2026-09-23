@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Formations &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Formations</h1>
+        <p>{{ page_obj.paginator.count }} formation(s) &middot; {{ nb_achevees }} achevée(s) &middot; {{ nb_en_cours }} en cours &middot; {{ nb_abandonnees }} abandonnée(s)</p>
+    </div>
+    {% if user.profile.is_saisie %}
+    <a href="{% url 'formations:creer' %}" class="primary-button">+ Nouvelle formation</a>
+    {% endif %}
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Bénéficiaire</th><th>Domaine</th><th>Début</th><th>Fin</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for f in formations %}
+            <tr>
+                <td>{{ f.beneficiaire }}</td>
+                <td>{{ f.domaine }}</td>
+                <td>{{ f.date_debut }}</td>
+                <td>{{ f.date_fin|default:"-" }}</td>
+                <td>{{ f.get_statut_formation_display }}</td>
+                <td>
+                    {% if user.profile.is_saisie or user.profile.is_validateur %}
+                    <a href="{% url 'formations:modifier' f.pk %}">Modifier</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-state">Aucune formation enregistrée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

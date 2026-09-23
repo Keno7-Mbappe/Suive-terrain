@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Soumissions Kobo &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <h1>Contrôle des soumissions Kobo</h1>
+        <p>{{ nb_total }} soumission(s) &middot; {{ nb_nouveau }} en attente &middot; {{ nb_erreur }} en erreur &middot; {{ nb_integre }} intégrée(s)</p>
+    </div>
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="statut">Statut</label>
+            <select name="statut" id="statut" onchange="this.form.submit()">
+                <option value="">Tous les statuts</option>
+                {% for code, libelle in statuts %}
+                <option value="{{ code }}" {% if filtre_statut == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="type">Formulaire</label>
+            <select name="type" id="type" onchange="this.form.submit()">
+                <option value="">Tous les formulaires</option>
+                {% for code, libelle in types_formulaire %}
+                <option value="{{ code }}" {% if filtre_type == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr><th>Formulaire</th><th>ID Kobo</th><th>Statut</th><th>Reçu le</th><th>Traité le</th><th>Données brutes</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for s in soumissions %}
+            <tr>
+                <td>{{ s.get_type_formulaire_display }}</td>
+                <td>{{ s.kobo_submission_id }}</td>
+                <td>
+                    {% if s.statut == "integre" %}<span class="badge badge-good">Intégré</span>
+                    {% elif s.statut == "erreur" %}<span class="badge badge-critical">Erreur</span>
+                    {% elif s.statut == "doublon" %}<span class="badge badge-neutral">Doublon</span>
+                    {% else %}<span class="badge badge-warning">Nouveau</span>{% endif %}
+                    {% if s.erreur %}<div class="erreur-message">{{ s.erreur }}</div>{% endif %}
+                </td>
+                <td>{{ s.recu_le|date:"d/m/Y H:i" }}</td>
+                <td>{{ s.traite_le|date:"d/m/Y H:i"|default:"-" }}</td>
+                <td>
+                    <details class="raw-data">
+                        <summary>Voir</summary>
+                        <pre>{{ s.donnees_brutes|pprint }}</pre>
+                    </details>
+                </td>
+                <td>
+                    <div class="row-actions">
+                        {% if s.statut == "nouveau" or s.statut == "erreur" %}
+                        <form method="post" action="{% url 'imports:reessayer' s.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="link-button">Réessayer</button>
+                        </form>
+                        {% endif %}
+                        {% if s.statut != "doublon" and s.statut != "integre" %}
+                        <form method="post" action="{% url 'imports:marquer_doublon' s.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="link-button">Marquer doublon</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-state">Aucune soumission reçue pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&statut={{ filtre_statut }}&type={{ filtre_type }}">&laquo; Précédent</a>{% endif %}
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&statut={{ filtre_statut }}&type={{ filtre_type }}">Suivant &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

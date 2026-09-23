@@ -1,0 +1,397 @@
+{% load static %}
+<div class="kpi-row">
+    <div class="kpi-card" style="--accent: var(--c1-blue)">
+        <div class="kpi-top">
+            <span class="kpi-label">Bénéficiaires</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value">{{ total_beneficiaires }}</div>
+        <div class="kpi-bottom"><span class="kpi-sub">Population enregistrée</span><span class="badge">100%</span></div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--c3-aqua)">
+        <div class="kpi-top">
+            <span class="kpi-label">Formés</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value">{{ total_formes }}</div>
+        <div class="kpi-bottom"><span class="kpi-sub">Taux d'achèvement</span><span class="badge">{{ taux_formes }}%</span></div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--c7-violet)">
+        <div class="kpi-top">
+            <span class="kpi-label">Certifiés</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value">{{ total_certifies }}</div>
+        <div class="kpi-bottom"><span class="kpi-sub">Taux de certification</span><span class="badge">{{ taux_certifies }}%</span></div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--c2-orange)">
+        <div class="kpi-top">
+            <span class="kpi-label">Insérés</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value">{{ total_inseres }}</div>
+        <div class="kpi-bottom"><span class="kpi-sub">Taux d'insertion</span><span class="badge">{{ taux_inseres }}%</span></div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--c6-green)">
+        <div class="kpi-top">
+            <span class="kpi-label">Suivis</span>
+            <span class="kpi-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+        </div>
+        <div class="kpi-value">{{ total_suivis }}</div>
+        <div class="kpi-bottom"><span class="kpi-sub">Taux de suivi post-formation</span><span class="badge">{{ taux_suivi }}%</span></div>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="panel" style="--accent: var(--seq-450)">
+        <h3>Parcours du bénéficiaire</h3>
+        <div class="panel-sub">Taux de rétention d'une étape à l'autre</div>
+        <div class="funnel">
+            <div class="funnel-stage" style="--w: 100%; --fill: var(--seq-250)">
+                <span class="funnel-name">Inscrits</span><span class="funnel-count">{{ total_beneficiaires }}</span>
+            </div>
+            <div class="funnel-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                <span>{{ conv_formes }}% formés</span>
+            </div>
+            <div class="funnel-stage" style="--w: {{ taux_formes }}%; --fill: var(--seq-350)">
+                <span class="funnel-name">Formés</span><span class="funnel-count">{{ total_formes }}</span>
+            </div>
+            <div class="funnel-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                <span>{{ conv_certifies }}% certifiés</span>
+            </div>
+            <div class="funnel-stage" style="--w: {{ taux_certifies }}%; --fill: var(--seq-450)">
+                <span class="funnel-name">Certifiés</span><span class="funnel-count">{{ total_certifies }}</span>
+            </div>
+            <div class="funnel-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                <span>{{ conv_inseres }}% insérés</span>
+            </div>
+            <div class="funnel-stage" style="--w: {{ taux_inseres }}%; --fill: var(--seq-650)">
+                <span class="funnel-name">Insérés</span><span class="funnel-count">{{ total_inseres }}</span>
+            </div>
+        </div>
+        <div class="stat-line">
+            <span class="item"><strong>{{ taux_abandon }}%</strong> taux d'abandon en formation</span>
+            <span class="item"><strong>{{ delai_moyen_insertion|default:"–" }}{% if delai_moyen_insertion %} mois{% endif %}</strong> délai moyen d'insertion</span>
+        </div>
+    </div>
+
+    <div class="panel" style="--accent: var(--c1-blue)">
+        <h3>Satisfaction</h3>
+        <div class="panel-sub">
+            {% if satisfaction_globale %}{{ nb_repondants }} répondant(s) sur les 3 cycles &middot; {{ taux_reponse }}% de taux de réponse{% else %}Aucune donnée de satisfaction{% endif %}
+        </div>
+        <div class="gauge-row">
+            <div class="gauge">
+                <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--grid)" stroke-width="11"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="var(--c1-blue)" stroke-width="11"
+                        stroke-linecap="round" pathLength="100"
+                        stroke-dasharray="{{ satisfaction_pct }} 100"
+                        transform="rotate(-90 60 60)"/>
+                </svg>
+                <div class="gauge-center">
+                    <strong>{{ satisfaction_globale|floatformat:1|default:"–" }}</strong><span>/5</span>
+                </div>
+            </div>
+            <div class="gauge-side">
+                <div class="chart-wrap"><canvas id="chartSatisfaction" height="150"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    {% if not est_public %}
+    <div class="panel" style="--accent: var(--c7-violet)">
+        <h3>Qualité des données</h3>
+        <div class="panel-sub">Sur la population filtrée</div>
+        <div class="meter" style="--accent: var(--c7-violet)">
+            <div class="meter-top"><span class="meter-label">Validation Kobo</span><span class="meter-value">{{ taux_validation_kobo }}%</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:{{ taux_validation_kobo }}%"></div></div>
+        </div>
+        <div class="meter" style="--accent: var(--c3-aqua)">
+            <div class="meter-top"><span class="meter-label">Complétude des coordonnées</span><span class="meter-value">{{ taux_completude }}%</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:{{ taux_completude }}%"></div></div>
+        </div>
+        <div class="stat-line">
+            <span class="item"><strong>{{ nb_doublons_potentiels }}</strong> doublon(s) potentiel(s)</span>
+            <span class="item"><strong>{{ nb_anomalies }}</strong> anomalie(s) détectée(s)</span>
+            <span class="item"><strong>{{ nb_soumissions_kobo }}</strong> soumission(s) Kobo reçue(s)</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="grid cols-2">
+    <div class="panel" style="--accent: var(--c1-blue)">
+        <h3>Répartition par région</h3>
+        <div class="panel-sub">Nombre de bénéficiaires</div>
+        <div class="chart-wrap"><canvas id="chartRegion" height="200"></canvas></div>
+    </div>
+    <div class="panel" style="--accent: var(--c3-aqua)">
+        <h3>Répartition par institution</h3>
+        <div class="panel-sub">Part de chaque institution</div>
+        <div class="chart-wrap donut-wrap"><canvas id="chartInstitution" height="190"></canvas></div>
+    </div>
+</div>
+
+<div class="grid cols-2">
+    <div class="panel" style="--accent: var(--c5-magenta)">
+        <h3>Sexe et tranches d'âge</h3>
+        <div class="panel-sub">Répartition de la population</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;">
+            <div class="chart-wrap"><canvas id="chartSexe" height="150"></canvas></div>
+            <div class="chart-wrap"><canvas id="chartAge" height="150"></canvas></div>
+        </div>
+    </div>
+    <div class="panel" style="--accent: var(--c6-green)">
+        <h3>Domaines de formation</h3>
+        <div class="panel-sub">Top spécialités par effectif</div>
+        <div class="chart-wrap"><canvas id="chartDomaine" height="200"></canvas></div>
+    </div>
+</div>
+
+<div class="grid cols-2">
+    <div class="panel" style="--accent: var(--c4-yellow)">
+        <h3>Situation professionnelle</h3>
+        <div class="panel-sub">des {{ total_inseres }} bénéficiaires insérés</div>
+        <div class="chart-wrap"><canvas id="chartSituation" height="200"></canvas></div>
+    </div>
+    <div class="panel" style="--accent: var(--c1-blue)">
+        <h3>Évolution du taux d'insertion</h3>
+        <div class="panel-sub">Comparaison entre les cycles d'enquête</div>
+        <div class="chart-wrap"><canvas id="chartEvolution" height="200"></canvas></div>
+    </div>
+</div>
+
+<div class="grid cols-2">
+    <div class="panel" style="--accent: var(--c5-magenta)">
+        <h3>Évolution de la satisfaction</h3>
+        <div class="panel-sub">Note globale moyenne par cycle d'enquête</div>
+        <div class="chart-wrap"><canvas id="chartEvolutionSatisfaction" height="200"></canvas></div>
+    </div>
+</div>
+
+{{ charts|json_script:"charts-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>
+(function () {
+    const DATA = JSON.parse(document.getElementById('charts-data').textContent);
+    const css = getComputedStyle(document.documentElement);
+    const v = (name) => css.getPropertyValue(name).trim();
+
+    Chart.register(ChartDataLabels);
+    Chart.defaults.font.family = "-apple-system, 'Segoe UI', Roboto, system-ui, sans-serif";
+    Chart.defaults.font.size = 12.5;
+    Chart.defaults.color = v('--ink-2');
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.plugins.datalabels.display = false;
+    Chart.defaults.animation.duration = 500;
+    Chart.defaults.animation.easing = 'easeOutQuart';
+
+    const gridStyle = { color: v('--grid'), drawTicks: false };
+    const noGrid = { display: false, drawTicks: false };
+
+    const tooltipStyle = {
+        enabled: true,
+        backgroundColor: v('--surface'),
+        titleColor: v('--ink'),
+        bodyColor: v('--ink-2'),
+        borderColor: v('--border'),
+        borderWidth: 1.5,
+        padding: 11,
+        cornerRadius: 10,
+        displayColors: false,
+        boxPadding: 4,
+        titleFont: { family: "'Manrope', 'Inter', sans-serif", weight: '700', size: 12.5 },
+        bodyFont: { family: "'Inter', sans-serif", size: 12.5, weight: '600' },
+    };
+
+    // Degrade horizontal doux (gauche -> droite) pour donner du relief aux barres
+    // sans jamais depasser l'opacite pleine de la teinte de base.
+    function hGradient(scriptableCtx, colorHex) {
+        const area = scriptableCtx.chart.chartArea;
+        if (!area) return colorHex;
+        const g = scriptableCtx.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+        g.addColorStop(0, colorHex + '99');
+        g.addColorStop(1, colorHex);
+        return g;
+    }
+
+    function hbar(id, labels, values, color, opts) {
+        opts = opts || {};
+        const ctx = document.getElementById(id);
+        if (!ctx) return;
+        const background = opts.colors
+            ? opts.colors
+            : (sctx) => hGradient(sctx, color);
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: background,
+                    hoverBackgroundColor: opts.colors || color,
+                    borderRadius: { topLeft: 0, bottomLeft: 0, topRight: 4, bottomRight: 4 },
+                    borderSkipped: false,
+                    barThickness: 20,
+                    maxBarThickness: 22,
+                }],
+            },
+            options: {
+                indexAxis: 'y',
+                layout: { padding: { right: 34 } },
+                scales: {
+                    x: { grid: gridStyle, border: { display: false }, beginAtZero: true, ticks: { precision: 0 }, max: opts.max },
+                    y: { grid: noGrid, border: { display: false } },
+                },
+                plugins: {
+                    tooltip: tooltipStyle,
+                    datalabels: {
+                        display: true, anchor: 'end', align: 'right', color: v('--ink'),
+                        font: { weight: 600, size: 12 },
+                        formatter: (val) => opts.suffix ? val + opts.suffix : val,
+                    },
+                },
+            },
+        });
+    }
+
+    // Anneau avec le total incruste au centre - adapte aux petits nombres de
+    // categories (2-3), la ou un donut est realmente le bon choix.
+    function donut(id, labels, values, colors) {
+        const ctx = document.getElementById(id);
+        if (!ctx) return;
+        const total = values.reduce((a, b) => a + b, 0);
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: v('--surface'),
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                }],
+            },
+            options: {
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        labels: {
+                            usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8,
+                            padding: 14, color: v('--ink-2'), font: { size: 12.5, weight: '600' },
+                        },
+                    },
+                    tooltip: tooltipStyle,
+                },
+            },
+            plugins: [{
+                id: 'centerText-' + id,
+                afterDraw(chart) {
+                    const area = chart.chartArea;
+                    if (!area) return;
+                    const c = chart.ctx;
+                    const cx = (area.left + area.right) / 2;
+                    const cy = (area.top + area.bottom) / 2;
+                    c.save();
+                    c.textAlign = 'center';
+                    c.textBaseline = 'middle';
+                    c.font = "700 22px 'Manrope', sans-serif";
+                    c.fillStyle = v('--ink');
+                    c.fillText(total, cx, cy - 8);
+                    c.font = "600 10.5px 'Inter', sans-serif";
+                    c.fillStyle = v('--ink-muted');
+                    c.fillText('total', cx, cy + 12);
+                    c.restore();
+                },
+            }],
+        });
+    }
+
+    // --- Satisfaction (une teinte, echelle /5) ---
+    hbar('chartSatisfaction', DATA.satisfaction.labels, DATA.satisfaction.values, v('--c1-blue'), {
+        max: 5, suffix: '/5',
+    });
+
+    // --- Repartitions (une teinte par carte) ---
+    hbar('chartRegion', DATA.region.labels, DATA.region.values, v('--c1-blue'));
+    hbar('chartDomaine', DATA.domaine.labels, DATA.domaine.values, v('--c6-green'));
+    hbar('chartSituation', DATA.situation_pro.labels, DATA.situation_pro.values, v('--c4-yellow'));
+
+    // --- Institution et sexe : peu de categories -> donut avec total au centre ---
+    donut('chartInstitution', DATA.institution.labels, DATA.institution.values, [v('--c1-blue'), v('--c3-aqua'), v('--c7-violet'), v('--c4-yellow')]);
+    donut('chartSexe', DATA.sexe.labels, DATA.sexe.values, [v('--c5-magenta'), v('--c1-blue')]);
+
+    // --- Age : rampe ordinale (buckets ordonnes) ---
+    hbar('chartAge', DATA.age.labels, DATA.age.values, null, {
+        colors: [v('--seq-250'), v('--seq-350'), v('--seq-450'), v('--seq-550'), v('--seq-650')],
+    });
+
+    // --- Evolution : ligne unique avec aire, reutilisable pour n'importe quelle
+    // mesure suivie d'un cycle a l'autre (taux d'insertion, note de satisfaction...) ---
+    function lineChart(id, labels, values, opts) {
+        opts = opts || {};
+        const ctx = document.getElementById(id);
+        if (!ctx) return;
+        const color = opts.color || v('--c1-blue');
+        const max = opts.max || 100;
+        const suffix = opts.suffix || '%';
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    data: values,
+                    borderColor: color,
+                    backgroundColor: color + '1A',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: color,
+                    pointBorderColor: v('--surface'),
+                    pointBorderWidth: 2,
+                    fill: true,
+                    tension: 0.35,
+                }],
+            },
+            options: {
+                layout: { padding: { top: 22 } },
+                scales: {
+                    x: { grid: noGrid, border: { display: false }, offset: true },
+                    y: { grid: gridStyle, border: { display: false }, beginAtZero: true, max, ticks: { callback: (val) => val + suffix } },
+                },
+                plugins: {
+                    tooltip: { ...tooltipStyle, callbacks: { label: (item) => item.parsed.y + suffix + (opts.tooltipLabel ? ' ' + opts.tooltipLabel : '') } },
+                    datalabels: {
+                        display: true, align: 'top', offset: 6, clamp: true, color: v('--ink'), font: { weight: 600, size: 12 },
+                        formatter: (val) => val + suffix,
+                    },
+                },
+            },
+        });
+    }
+
+    lineChart('chartEvolution', DATA.evolution.labels, DATA.evolution.values, {
+        color: v('--c1-blue'), max: 100, suffix: '%', tooltipLabel: "d'insertion",
+    });
+    lineChart('chartEvolutionSatisfaction', DATA.evolution_satisfaction.labels, DATA.evolution_satisfaction.values, {
+        color: v('--c5-magenta'), max: 5, suffix: '/5',
+    });
+})();
+</script>
