@@ -27,8 +27,6 @@ services:
         sync: false
       - key: KOBO_ASSET_UID_SUIVI
         sync: false
-      - key: KOBO_ASSET_UID_SATISFACTION
-        sync: false
       - key: KOBO_ASSET_UID_SATISFACTION_INSTITUTION
         sync: false
       - key: CORS_ALLOWED_ORIGINS

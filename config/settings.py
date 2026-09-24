@@ -157,8 +157,10 @@ LOGOUT_REDIRECT_URL = "login"
 # --- KoboToolbox integration ---
 KOBO_API_BASE_URL = os.environ.get("KOBO_API_BASE_URL", "https://kf.kobotoolbox.org")
 KOBO_API_TOKEN = os.environ.get("KOBO_API_TOKEN", "")
+
+# "suivi" couvre aussi la satisfaction bénéficiaire (module optionnel de la
+# même soumission Kobo, cf. apps/imports/services.py) : pas d'asset séparé.
 KOBO_ASSET_UID_SUIVI = os.environ.get("KOBO_ASSET_UID_SUIVI", "")
-KOBO_ASSET_UID_SATISFACTION = os.environ.get("KOBO_ASSET_UID_SATISFACTION", "")
 KOBO_ASSET_UID_SATISFACTION_INSTITUTION = os.environ.get("KOBO_ASSET_UID_SATISFACTION_INSTITUTION", "")
 
 REST_FRAMEWORK = {

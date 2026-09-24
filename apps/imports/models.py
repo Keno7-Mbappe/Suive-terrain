@@ -1,8 +1,9 @@
 from django.db import models
 
 TYPES_FORMULAIRE = [
-    ("suivi", "Suivi"),
-    ("satisfaction", "Satisfaction bénéficiaire"),
+    # "suivi" inclut la satisfaction bénéficiaire (module optionnel de la même
+    # soumission Kobo) : pas de type "satisfaction" séparé.
+    ("suivi", "Suivi et satisfaction bénéficiaire"),
     ("satisfaction_institution", "Satisfaction institutionnelle"),
 ]
 

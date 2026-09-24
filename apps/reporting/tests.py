@@ -53,7 +53,10 @@ class RapportCycleExcelTests(TestCase):
 
         import io
         classeur = load_workbook(io.BytesIO(response.content))
-        self.assertEqual(classeur.sheetnames, ["Synthèse", "Bénéficiaires", "Satisfaction", "Qualité des données"])
+        self.assertEqual(
+            classeur.sheetnames,
+            ["Synthèse", "Bénéficiaires", "Satisfaction", "Satisfaction institutionnelle", "Qualité des données"],
+        )
 
         feuille_beneficiaires = classeur["Bénéficiaires"]
         ids_beneficiaires = [row[0].value for row in feuille_beneficiaires.iter_rows(min_row=2)]

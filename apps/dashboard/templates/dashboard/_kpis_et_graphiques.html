@@ -130,6 +130,20 @@
             <span class="item"><strong>{{ nb_soumissions_kobo }}</strong> soumission(s) Kobo reçue(s)</span>
         </div>
     </div>
+
+    <div class="panel" style="--accent: var(--c5-magenta)">
+        <h3>Satisfaction des institutions envers le dispositif</h3>
+        <div class="panel-sub">
+            {% if satisfaction_institution_globale %}{{ nb_reponses_institution }} réponse(s) — note globale {{ satisfaction_institution_globale|floatformat:1 }}/5{% else %}Aucune réponse pour l'instant{% endif %}
+        </div>
+        {% if satisfaction_institution_globale %}
+        <div class="meter" style="--accent: var(--c5-magenta)">
+            <div class="meter-top"><span class="meter-label">Qualité des données</span><span class="meter-value">{{ satisfaction_institution_globale|floatformat:1 }}/5</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:{{ satisfaction_institution_pct }}%"></div></div>
+        </div>
+        {% endif %}
+        <p class="panel-sub" style="margin-top:10px">Qualité des données, outils de collecte, tableaux de bord, appui technique et coordination — évalués par EFTP/INAP/ANEFIP/ONEQ/Direction des Projets.</p>
+    </div>
     {% endif %}
 </div>
 

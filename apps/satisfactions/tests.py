@@ -42,8 +42,8 @@ class SatisfactionViewsTests(TestCase):
         response = self.client.post(reverse("satisfactions:creer_institution"), {
             "institution": autre_institution.pk,  # tentative de forcer une autre institution
             "cycle": self.cycle.pk,
-            "note_formation": 4, "note_formateurs": 4, "note_contenus": 4,
-            "note_equipements": 4, "note_accueil": 4,
+            "note_qualite_donnees": 4, "note_outils_collecte": 4, "note_tableaux_bord": 4,
+            "note_appui_technique": 4, "note_coordination": 4, "utilite_dispositif": "pleinement",
         })
         self.assertEqual(response.status_code, 302)
         reponse = SatisfactionInstitution.objects.get(cycle=self.cycle)

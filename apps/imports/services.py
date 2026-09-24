@@ -7,10 +7,12 @@ transformation - pour ne jamais perdre de donnée brute.
 Étape 2 (process_pending) : relit les soumissions "nouveau", les contrôle
 (bénéficiaire connu, pas de doublon) et les intègre dans les tables métier.
 
-Les noms de champs Kobo ci-dessous (KOBO_FIELDS_*) sont une hypothèse basée sur
-la maquette du questionnaire (draft.docx) et devront être ajustés pour
-correspondre exactement aux noms de champs ("name") du XLSForm réel une fois
-celui-ci finalisé dans KoboToolbox.
+Le formulaire "suivi" fusionne suivi longitudinal ET satisfaction bénéficiaire
+en une seule soumission (question "faire_satisfaction" à l'intérieur du groupe
+"bascule") : une même soumission Kobo peut donc créer/mettre à jour à la fois
+un `Suivi` et une `Satisfaction`. Les noms de champs ci-dessous, chemins de
+groupe inclus ("selection/canal", "module_suivi/situation", ...), correspondent
+exactement à ceux du XLSForm généré par `generate_kobo_xlsforms`.
 """
 
 import logging
@@ -29,50 +31,79 @@ from .models import KoboSoumission
 
 logger = logging.getLogger(__name__)
 
+# Les cycles sont encodés en dur dans les formulaires (cycle_1/cycle_2/cycle_3)
+# plutôt que via un identifiant de base de données : on les résout ici par
+# rang chronologique plutôt que par un code stable stocké en base, pour ne pas
+# ajouter un champ dédié à CycleEnquete pour une liste de 3 valeurs connues à
+# l'avance et qui ne change pas.
+CODES_CYCLES = ["cycle_1", "cycle_2", "cycle_3"]
+
+
+def _resoudre_cycle(code_cycle):
+    cycles = list(CycleEnquete.objects.order_by("date_debut"))
+    try:
+        return cycles[CODES_CYCLES.index(code_cycle)]
+    except (ValueError, IndexError):
+        return None
+
+
+def _vers_bool_oui_non(valeur):
+    return str(valeur or "").strip().lower() == "oui"
+
+
 KOBO_FIELDS_SUIVI = {
-    "id_beneficiaire": "id_beneficiaire",
-    "vague": "vague",
-    "date_suivi": "date_du_contact",
+    "id_beneficiaire": "selection/id_beneficiaire",
+    "canal": "selection/canal",
+    "date_suivi": "selection/date_contact",
     "enqueteur": "enqueteur",
-    "issue_contact": "issue_du_contact",
-    "situation_actuelle": "situation_actuelle",
-    "type_contrat": "type_contrat",
-    "secteur_activite": "secteur_activite",
-    "date_debut_activite": "date_de_debut",
-    "tranche_revenu": "tranche_de_revenu",
-    "lien_formation": "lien_avec_la_formation",
-    "obstacle_principal": "principal_obstacle",
+    "issue_contact": "issue_contact",
+    "vague": "module_suivi/vague",
+    "situation_actuelle": "module_suivi/situation",
+    "type_contrat": "module_suivi/type_contrat",
+    "type_activite": "module_suivi/type_activite",
+    "secteur_activite": "module_suivi/secteur",
+    "date_debut_activite": "module_suivi/date_debut_activite",
+    "tranche_revenu": "module_suivi/revenu_tranche",
+    "lien_formation": "module_suivi/lien_formation",
+    "duree_recherche_mois": "module_suivi/duree_recherche_mois",
+    "demarches": "module_suivi/demarches",
+    "obstacle_principal": "module_suivi/obstacle",
 }
 
+# Sous-partie "satisfaction", incluse dans la même soumission que le suivi
+# (groupe "bascule", uniquement rempli si faire_satisfaction == "oui").
 KOBO_FIELDS_SATISFACTION = {
-    "id_beneficiaire": "id_beneficiaire",
-    "id_cycle": "id_cycle",
-    "note_formation": "note_formation",
-    "note_formateurs": "note_formateurs",
-    "note_contenus": "note_contenus",
-    "note_equipements": "note_equipements",
-    "note_accueil": "note_accueil",
-    "amelioration_employabilite": "amelioration_employabilite",
-    "recommande": "recommande",
-    "points_positifs": "ce_qui_a_bien_fonctionne",
-    "points_a_ameliorer": "ce_qu_il_faudrait_ameliorer",
+    "faire_satisfaction": "bascule/faire_satisfaction",
+    "id_cycle": "bascule/cycle",
+    "note_formation": "bascule/note_formation",
+    "note_formateurs": "bascule/note_formateurs",
+    "note_contenus": "bascule/note_contenus",
+    "note_equipements": "bascule/note_equipements",
+    "note_accueil": "bascule/note_conditions",
+    "amelioration_employabilite": "bascule/employabilite",
+    "recommande": "bascule/recommande",
+    "raison_non_recommande": "bascule/raison_non",
+    "points_positifs": "bascule/point_fort",
+    "points_a_ameliorer": "bascule/point_amelioration",
 }
 
 KOBO_FIELDS_SATISFACTION_INSTITUTION = {
-    "id_institution": "id_institution",
-    "id_cycle": "id_cycle",
-    "note_formation": "note_formation",
-    "note_formateurs": "note_formateurs",
-    "note_contenus": "note_contenus",
-    "note_equipements": "note_equipements",
-    "note_accueil": "note_accueil",
-    "points_positifs": "ce_qui_a_bien_fonctionne",
-    "points_a_ameliorer": "ce_qu_il_faudrait_ameliorer",
+    "id_institution": "identification/institution",
+    "fonction_repondant": "identification/fonction",
+    "id_cycle": "identification/cycle",
+    "date_reponse": "identification/date_reponse",
+    "note_qualite_donnees": "notes/note_qualite_donnees",
+    "note_outils_collecte": "notes/note_outils_collecte",
+    "note_tableaux_bord": "notes/note_tableaux_bord",
+    "note_appui_technique": "notes/note_appui_technique",
+    "note_coordination": "notes/note_coordination",
+    "utilite_dispositif": "utilite_dispositif",
+    "difficultes": "difficultes",
+    "recommandations": "recommandations",
 }
 
 ASSET_UID_PAR_TYPE = {
     "suivi": lambda: settings.KOBO_ASSET_UID_SUIVI,
-    "satisfaction": lambda: settings.KOBO_ASSET_UID_SATISFACTION,
     "satisfaction_institution": lambda: settings.KOBO_ASSET_UID_SATISFACTION_INSTITUTION,
 }
 
@@ -129,30 +160,40 @@ def _integrer_suivi(donnees):
     if beneficiaire is None:
         raise ValueError(f"Bénéficiaire introuvable : {donnees.get(champs['id_beneficiaire'])}")
 
+    duree_recherche = donnees.get(champs["duree_recherche_mois"])
     Suivi.objects.update_or_create(
         beneficiaire=beneficiaire,
         vague=donnees.get(champs["vague"]),
         defaults={
             "date_suivi": parse_date(donnees.get(champs["date_suivi"])) or timezone.now().date(),
+            "canal": donnees.get(champs["canal"], "") or "",
             "enqueteur": donnees.get(champs["enqueteur"], "") or "",
             "issue_contact": donnees.get(champs["issue_contact"], ""),
             "situation_actuelle": donnees.get(champs["situation_actuelle"], "") or "",
             "type_contrat": donnees.get(champs["type_contrat"], "") or "",
+            "type_activite": donnees.get(champs["type_activite"], "") or "",
             "secteur_activite": donnees.get(champs["secteur_activite"], "") or "",
             "date_debut_activite": parse_date(donnees.get(champs["date_debut_activite"]) or "") or None,
             "tranche_revenu": donnees.get(champs["tranche_revenu"], "") or "",
             "lien_formation": donnees.get(champs["lien_formation"], "") or "",
+            "duree_recherche_mois": int(duree_recherche) if duree_recherche not in (None, "") else None,
+            "demarches": donnees.get(champs["demarches"], "") or "",
             "obstacle_principal": donnees.get(champs["obstacle_principal"], "") or "",
         },
     )
 
+    # Le module satisfaction est optionnel et fait partie de la même soumission
+    # (bascule/faire_satisfaction) : pas de deuxième formulaire Kobo à synchroniser.
+    if _vers_bool_oui_non(donnees.get(KOBO_FIELDS_SATISFACTION["faire_satisfaction"])):
+        _integrer_satisfaction(beneficiaire, donnees)
 
-def _integrer_satisfaction(donnees):
+
+def _integrer_satisfaction(beneficiaire, donnees):
     champs = KOBO_FIELDS_SATISFACTION
-    beneficiaire = _get_beneficiaire(donnees.get(champs["id_beneficiaire"]))
-    if beneficiaire is None:
-        raise ValueError(f"Bénéficiaire introuvable : {donnees.get(champs['id_beneficiaire'])}")
-    cycle = CycleEnquete.objects.get(pk=donnees.get(champs["id_cycle"]))
+    code_cycle = donnees.get(champs["id_cycle"])
+    cycle = _resoudre_cycle(code_cycle)
+    if cycle is None:
+        raise ValueError(f"Cycle d'enquête introuvable : {code_cycle}")
 
     Satisfaction.objects.update_or_create(
         beneficiaire=beneficiaire,
@@ -163,8 +204,9 @@ def _integrer_satisfaction(donnees):
             "note_contenus": donnees.get(champs["note_contenus"]),
             "note_equipements": donnees.get(champs["note_equipements"]),
             "note_accueil": donnees.get(champs["note_accueil"]),
-            "amelioration_employabilite": donnees.get(champs["amelioration_employabilite"], ""),
-            "recommande": str(donnees.get(champs["recommande"], "")).lower() in ("oui", "true", "1"),
+            "amelioration_employabilite": donnees.get(champs["amelioration_employabilite"], "") or "",
+            "recommande": _vers_bool_oui_non(donnees.get(champs["recommande"])),
+            "raison_non_recommande": donnees.get(champs["raison_non_recommande"], "") or "",
             "points_positifs": donnees.get(champs["points_positifs"], "") or "",
             "points_a_ameliorer": donnees.get(champs["points_a_ameliorer"], "") or "",
         },
@@ -174,26 +216,31 @@ def _integrer_satisfaction(donnees):
 def _integrer_satisfaction_institution(donnees):
     champs = KOBO_FIELDS_SATISFACTION_INSTITUTION
     institution = Institution.objects.get(pk=donnees.get(champs["id_institution"]))
-    cycle = CycleEnquete.objects.get(pk=donnees.get(champs["id_cycle"]))
+    code_cycle = donnees.get(champs["id_cycle"])
+    cycle = _resoudre_cycle(code_cycle)
+    if cycle is None:
+        raise ValueError(f"Cycle d'enquête introuvable : {code_cycle}")
 
     SatisfactionInstitution.objects.update_or_create(
         institution=institution,
         cycle=cycle,
         defaults={
-            "note_formation": donnees.get(champs["note_formation"]),
-            "note_formateurs": donnees.get(champs["note_formateurs"]),
-            "note_contenus": donnees.get(champs["note_contenus"]),
-            "note_equipements": donnees.get(champs["note_equipements"]),
-            "note_accueil": donnees.get(champs["note_accueil"]),
-            "points_positifs": donnees.get(champs["points_positifs"], "") or "",
-            "points_a_ameliorer": donnees.get(champs["points_a_ameliorer"], "") or "",
+            "fonction_repondant": donnees.get(champs["fonction_repondant"], "") or "",
+            "date_reponse": parse_date(donnees.get(champs["date_reponse"]) or "") or None,
+            "note_qualite_donnees": donnees.get(champs["note_qualite_donnees"]),
+            "note_outils_collecte": donnees.get(champs["note_outils_collecte"]),
+            "note_tableaux_bord": donnees.get(champs["note_tableaux_bord"]),
+            "note_appui_technique": donnees.get(champs["note_appui_technique"]),
+            "note_coordination": donnees.get(champs["note_coordination"]),
+            "utilite_dispositif": donnees.get(champs["utilite_dispositif"], "") or "",
+            "difficultes": donnees.get(champs["difficultes"], "") or "",
+            "recommandations": donnees.get(champs["recommandations"], "") or "",
         },
     )
 
 
 INTEGRATEURS = {
     "suivi": _integrer_suivi,
-    "satisfaction": _integrer_satisfaction,
     "satisfaction_institution": _integrer_satisfaction_institution,
 }
 

@@ -37,14 +37,14 @@ class SuiviScopingEtLogiqueTests(TestCase):
         self.client.force_login(self.saisie_eftp)
         response = self.client.post(reverse("suivis:creer"), {
             "beneficiaire": self.beneficiaire_eftp.pk, "vague": "m3", "date_suivi": "2026-04-01",
-            "issue_contact": "joint", "situation_actuelle": "emploi_salarie",
-            "type_contrat": "cdi", "secteur_activite": "Informatique",
-            "tranche_revenu": "30000_60000", "lien_formation": "direct",
+            "issue_contact": "joint", "situation_actuelle": "emploi",
+            "type_contrat": "CDI", "secteur_activite": "telecom",
+            "tranche_revenu": "30_60k", "lien_formation": "direct",
         })
         self.assertEqual(response.status_code, 302)
         suivi = Suivi.objects.get(beneficiaire=self.beneficiaire_eftp)
-        self.assertEqual(suivi.situation_actuelle, "emploi_salarie")
-        self.assertEqual(suivi.type_contrat, "cdi")
+        self.assertEqual(suivi.situation_actuelle, "emploi")
+        self.assertEqual(suivi.type_contrat, "CDI")
 
     def test_contact_injoignable_efface_la_situation_meme_si_soumise(self):
         # Un enquêteur pourrait laisser des valeurs résiduelles dans le formulaire ;
@@ -52,13 +52,25 @@ class SuiviScopingEtLogiqueTests(TestCase):
         self.client.force_login(self.saisie_eftp)
         response = self.client.post(reverse("suivis:creer"), {
             "beneficiaire": self.beneficiaire_eftp.pk, "vague": "m3", "date_suivi": "2026-04-01",
-            "issue_contact": "injoignable", "situation_actuelle": "emploi_salarie",
-            "type_contrat": "cdi",
+            "issue_contact": "injoignable", "situation_actuelle": "emploi",
+            "type_contrat": "CDI",
         })
         self.assertEqual(response.status_code, 302)
         suivi = Suivi.objects.get(beneficiaire=self.beneficiaire_eftp)
         self.assertEqual(suivi.situation_actuelle, "")
         self.assertEqual(suivi.type_contrat, "")
+
+    def test_situation_recherche_conserve_duree_et_efface_si_autre_situation(self):
+        self.client.force_login(self.saisie_eftp)
+        response = self.client.post(reverse("suivis:creer"), {
+            "beneficiaire": self.beneficiaire_eftp.pk, "vague": "m6", "date_suivi": "2026-04-01",
+            "issue_contact": "joint", "situation_actuelle": "recherche",
+            "duree_recherche_mois": "4", "demarches": "candidatures reseau",
+        })
+        self.assertEqual(response.status_code, 302)
+        suivi = Suivi.objects.get(beneficiaire=self.beneficiaire_eftp)
+        self.assertEqual(suivi.duree_recherche_mois, 4)
+        self.assertEqual(suivi.demarches, "candidatures reseau")
 
     def test_liste_scopee(self):
         Suivi.objects.create(

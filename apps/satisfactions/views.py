@@ -9,13 +9,17 @@ from .forms import SatisfactionForm, SatisfactionInstitutionForm
 from .models import Satisfaction, SatisfactionInstitution
 
 
-def _note_moyenne(queryset):
-    moyennes = queryset.aggregate(
-        formation=Avg("note_formation"), formateurs=Avg("note_formateurs"), contenus=Avg("note_contenus"),
-        equipements=Avg("note_equipements"), accueil=Avg("note_accueil"),
-    )
+def _note_moyenne(queryset, champs):
+    moyennes = queryset.aggregate(**{champ: Avg(champ) for champ in champs})
     valeurs = [v for v in moyennes.values() if v is not None]
     return round(sum(valeurs) / len(valeurs), 2) if valeurs else None
+
+
+CHAMPS_NOTES_BENEFICIAIRE = ["note_formation", "note_formateurs", "note_contenus", "note_equipements", "note_accueil"]
+CHAMPS_NOTES_INSTITUTION = [
+    "note_qualite_donnees", "note_outils_collecte", "note_tableaux_bord",
+    "note_appui_technique", "note_coordination",
+]
 
 
 class SatisfactionListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListView):
@@ -28,7 +32,7 @@ class SatisfactionListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["note_moyenne"] = _note_moyenne(self.get_queryset())
+        context["note_moyenne"] = _note_moyenne(self.get_queryset(), CHAMPS_NOTES_BENEFICIAIRE)
         return context
 
 
@@ -79,7 +83,7 @@ class SatisfactionInstitutionListView(RoleRequiredMixin, InstitutionScopedQuerys
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["note_moyenne"] = _note_moyenne(self.get_queryset())
+        context["note_moyenne"] = _note_moyenne(self.get_queryset(), CHAMPS_NOTES_INSTITUTION)
         return context
 
 

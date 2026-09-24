@@ -8,7 +8,7 @@ from apps.formations.models import Formation
 from apps.imports.models import KoboSoumission
 from apps.insertions.models import SITUATIONS_PRO, Insertion
 from apps.referentiels.models import REGIONS, CycleEnquete, Institution
-from apps.satisfactions.models import Satisfaction
+from apps.satisfactions.models import Satisfaction, SatisfactionInstitution
 from apps.suivis.models import Suivi
 
 ORDRE_TRANCHES_AGE = ["<20", "20-30", "31-40", "41-50", ">50"]
@@ -106,6 +106,29 @@ def _contexte_dashboard(request):
     nb_repondants = satisfactions.values("beneficiaire").distinct().count()
 
     total_suivis = Suivi.objects.filter(beneficiaire__in=beneficiaires).values("beneficiaire").distinct().count()
+
+    # Satisfaction des institutions à l'égard du dispositif de suivi lui-même
+    # (qualité des données, outils, tableaux de bord...) : pilotage interne
+    # (ONEQ / Direction des Projets), pas une donnée de résultat bénéficiaire.
+    satisfactions_institution = SatisfactionInstitution.objects.all()
+    if institution_id:
+        satisfactions_institution = satisfactions_institution.filter(institution_id=institution_id)
+    if cycle_id:
+        satisfactions_institution = satisfactions_institution.filter(cycle_id=cycle_id)
+    nb_reponses_institution = satisfactions_institution.count()
+    dimensions_institution = satisfactions_institution.aggregate(
+        qualite=Avg("note_qualite_donnees"), outils=Avg("note_outils_collecte"),
+        tableaux_bord=Avg("note_tableaux_bord"), appui=Avg("note_appui_technique"),
+        coordination=Avg("note_coordination"),
+    )
+    notes_institution_valides = [round(v, 2) for v in dimensions_institution.values() if v is not None]
+    satisfaction_institution_globale = (
+        round(sum(notes_institution_valides) / len(notes_institution_valides), 2)
+        if notes_institution_valides else None
+    )
+    satisfaction_institution_pct = (
+        round(satisfaction_institution_globale / 5 * 100, 1) if satisfaction_institution_globale else 0
+    )
 
     nb_doublons_potentiels = Beneficiaire.groupes_doublons(beneficiaires).count()
     nb_anomalies = _compter_anomalies(beneficiaires)
@@ -217,6 +240,9 @@ def _contexte_dashboard(request):
         "taux_completude": taux_completude,
         "nb_soumissions_kobo": nb_soumissions_kobo,
         "taux_validation_kobo": taux_validation_kobo,
+        "nb_reponses_institution": nb_reponses_institution,
+        "satisfaction_institution_globale": satisfaction_institution_globale,
+        "satisfaction_institution_pct": satisfaction_institution_pct,
         "satisfaction_globale": satisfaction_globale,
         "nb_repondants": nb_repondants,
         "taux_reponse": _taux(nb_repondants, total_beneficiaires),

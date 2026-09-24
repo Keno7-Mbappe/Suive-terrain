@@ -11,9 +11,10 @@ class SatisfactionForm(InstitutionScopedBeneficiaireFormMixin, forms.ModelForm):
         fields = [
             "beneficiaire", "cycle", "note_formation", "note_formateurs", "note_contenus",
             "note_equipements", "note_accueil", "amelioration_employabilite", "recommande",
-            "points_positifs", "points_a_ameliorer",
+            "raison_non_recommande", "points_positifs", "points_a_ameliorer",
         ]
         widgets = {
+            "raison_non_recommande": forms.Textarea(attrs={"rows": 2}),
             "points_positifs": forms.Textarea(attrs={"rows": 3}),
             "points_a_ameliorer": forms.Textarea(attrs={"rows": 3}),
         }
@@ -23,12 +24,15 @@ class SatisfactionInstitutionForm(forms.ModelForm):
     class Meta:
         model = SatisfactionInstitution
         fields = [
-            "institution", "cycle", "note_formation", "note_formateurs", "note_contenus",
-            "note_equipements", "note_accueil", "points_positifs", "points_a_ameliorer",
+            "institution", "cycle", "fonction_repondant", "date_reponse",
+            "note_qualite_donnees", "note_outils_collecte", "note_tableaux_bord",
+            "note_appui_technique", "note_coordination", "utilite_dispositif",
+            "difficultes", "recommandations",
         ]
         widgets = {
-            "points_positifs": forms.Textarea(attrs={"rows": 3}),
-            "points_a_ameliorer": forms.Textarea(attrs={"rows": 3}),
+            "date_reponse": forms.DateInput(attrs={"type": "date"}),
+            "difficultes": forms.Textarea(attrs={"rows": 3}),
+            "recommandations": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, request=None, **kwargs):

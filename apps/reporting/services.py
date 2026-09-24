@@ -5,7 +5,7 @@ from apps.beneficiaires.models import Beneficiaire
 from apps.certifications.models import Certification
 from apps.formations.models import Formation
 from apps.insertions.models import Insertion
-from apps.satisfactions.models import Satisfaction
+from apps.satisfactions.models import Satisfaction, SatisfactionInstitution
 from apps.suivis.models import Suivi
 
 
@@ -41,6 +41,9 @@ def generer_rapport_cycle(cycle, institution_id=None):
     )
     nb_suivis = Suivi.objects.filter(beneficiaire__in=beneficiaires).values("beneficiaire").distinct().count()
     satisfactions = Satisfaction.objects.filter(beneficiaire__in=beneficiaires, cycle=cycle)
+    satisfactions_institution = SatisfactionInstitution.objects.filter(cycle=cycle)
+    if institution_id:
+        satisfactions_institution = satisfactions_institution.filter(institution_id=institution_id)
     doublons = Beneficiaire.groupes_doublons(beneficiaires)
 
     classeur = Workbook()
@@ -84,6 +87,17 @@ def generer_rapport_cycle(cycle, institution_id=None):
         feuille_satisfaction.append([
             str(s.beneficiaire), s.note_formation, s.note_formateurs, s.note_contenus,
             s.note_equipements, s.note_accueil, s.note_globale, "Oui" if s.recommande else "Non",
+        ])
+
+    feuille_satisfaction_institution = classeur.create_sheet("Satisfaction institutionnelle")
+    _entete(feuille_satisfaction_institution, [
+        "Institution", "Qualité des données", "Outils de collecte", "Tableaux de bord",
+        "Appui technique", "Coordination", "Note globale", "Le dispositif répond-il aux besoins ?",
+    ])
+    for s in satisfactions_institution.select_related("institution"):
+        feuille_satisfaction_institution.append([
+            str(s.institution), s.note_qualite_donnees, s.note_outils_collecte, s.note_tableaux_bord,
+            s.note_appui_technique, s.note_coordination, s.note_globale, s.get_utilite_dispositif_display(),
         ])
 
     feuille_qualite = classeur.create_sheet("Qualité des données")
