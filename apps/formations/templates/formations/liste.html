@@ -11,15 +11,17 @@
     {% endif %}
 </div>
 <div class="panel">
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
-            <tr><th>Bénéficiaire</th><th>Domaine</th><th>Début</th><th>Fin</th><th>Statut</th><th></th></tr>
+            <tr><th>Bénéficiaire</th><th>Domaine</th><th>Centre</th><th>Début</th><th>Fin</th><th>Statut</th><th></th></tr>
         </thead>
         <tbody>
             {% for f in formations %}
             <tr>
                 <td>{{ f.beneficiaire }}</td>
                 <td>{{ f.domaine }}</td>
+                <td>{{ f.centre|default:"-" }}</td>
                 <td>{{ f.date_debut }}</td>
                 <td>{{ f.date_fin|default:"-" }}</td>
                 <td>{{ f.get_statut_formation_display }}</td>
@@ -30,10 +32,11 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="empty-state">Aucune formation enregistrée.</td></tr>
+            <tr><td colspan="7" class="empty-state">Aucune formation enregistrée.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}

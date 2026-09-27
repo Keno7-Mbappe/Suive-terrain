@@ -11,10 +11,13 @@
     {% endif %}
 </div>
 <div class="panel">
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
             <tr>
-                <th>ID</th><th>Nom</th><th>Prénom</th><th>Sexe</th><th>Région</th><th>Institution</th><th>Statut</th><th></th>
+                <th>ID</th><th>Nom</th><th>Prénom</th><th>Sexe</th><th>Date de naissance</th><th>Âge</th>
+                <th>Région</th><th>Quartier</th><th>Niveau d'étude</th><th>Institution</th>
+                <th>Téléphone</th><th>Enregistré le</th><th>Statut</th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -24,8 +27,14 @@
                 <td>{{ b.nom }}</td>
                 <td>{{ b.prenom }}</td>
                 <td>{{ b.get_sexe_display }}</td>
+                <td>{{ b.date_naissance }}</td>
+                <td>{{ b.tranche_age }}</td>
                 <td>{{ b.get_region_display }}</td>
+                <td>{{ b.quartier|default:"-" }}</td>
+                <td>{{ b.niveau_etude|default:"-" }}</td>
                 <td>{{ b.institution }}</td>
+                <td>{{ b.telephone|default:"-" }}</td>
+                <td>{{ b.date_enregistrement }}</td>
                 <td>{{ b.get_statut_display }}</td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
@@ -34,10 +43,11 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="8" class="empty-state">Aucun bénéficiaire enregistré.</td></tr>
+            <tr><td colspan="14" class="empty-state">Aucun bénéficiaire enregistré.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}

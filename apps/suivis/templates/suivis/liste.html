@@ -11,9 +11,14 @@
     {% endif %}
 </div>
 <div class="panel">
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
-            <tr><th>Bénéficiaire</th><th>Vague</th><th>Date</th><th>Issue du contact</th><th>Situation</th><th></th></tr>
+            <tr>
+                <th>Bénéficiaire</th><th>Vague</th><th>Date</th><th>Canal</th><th>Issue du contact</th>
+                <th>Situation</th><th>Secteur</th><th>Tranche de revenu</th><th>Lien formation</th>
+                <th>Enquêteur</th><th></th>
+            </tr>
         </thead>
         <tbody>
             {% for s in suivis %}
@@ -21,8 +26,13 @@
                 <td>{{ s.beneficiaire }}</td>
                 <td>{{ s.get_vague_display }}</td>
                 <td>{{ s.date_suivi }}</td>
+                <td>{{ s.get_canal_display|default:"-" }}</td>
                 <td>{{ s.get_issue_contact_display }}</td>
                 <td>{{ s.get_situation_actuelle_display|default:"-" }}</td>
+                <td>{{ s.get_secteur_activite_display|default:"-" }}</td>
+                <td>{{ s.get_tranche_revenu_display|default:"-" }}</td>
+                <td>{{ s.get_lien_formation_display|default:"-" }}</td>
+                <td>{{ s.enqueteur|default:"-" }}</td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
                     <a href="{% url 'suivis:modifier' s.pk %}">Modifier</a>
@@ -30,10 +40,11 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="empty-state">Aucun suivi enregistré.</td></tr>
+            <tr><td colspan="11" class="empty-state">Aucun suivi enregistré.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}

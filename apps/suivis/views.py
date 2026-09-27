@@ -17,6 +17,9 @@ class SuiviListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListView)
     paginate_by = 25
     institution_lookup = "beneficiaire__institution"
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("beneficiaire")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()

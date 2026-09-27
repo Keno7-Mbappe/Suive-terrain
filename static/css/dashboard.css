@@ -326,7 +326,9 @@ a { color: inherit; }
 .secondary-button { background: var(--surface); color: var(--ink-2); border-color: var(--border); }
 .secondary-button:hover { border-color: var(--c1-blue); color: var(--c1-blue); background: color-mix(in srgb, var(--c1-blue) 6%, white); }
 
+.table-scroll { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.data-table td, .data-table th { white-space: nowrap; }
 .data-table th, .data-table td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--border); }
 .data-table th { color: var(--ink-muted); font-weight: 650; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; background: var(--surface-2); }
 .data-table th:first-child { border-top-left-radius: var(--radius-sm); }

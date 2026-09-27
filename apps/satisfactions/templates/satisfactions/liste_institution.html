@@ -11,16 +11,28 @@
     {% endif %}
 </div>
 <div class="panel">
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
-            <tr><th>Institution</th><th>Cycle</th><th>Note globale</th><th></th></tr>
+            <tr>
+                <th>Institution</th><th>Cycle</th><th>Fonction du répondant</th><th>Qualité données</th>
+                <th>Outils de collecte</th><th>Tableaux de bord</th><th>Appui technique</th>
+                <th>Coordination</th><th>Note globale</th><th>Répond aux besoins</th><th></th>
+            </tr>
         </thead>
         <tbody>
             {% for s in satisfactions %}
             <tr>
                 <td>{{ s.institution }}</td>
                 <td>{{ s.cycle }}</td>
+                <td>{{ s.fonction_repondant|default:"-" }}</td>
+                <td>{{ s.note_qualite_donnees }}/5</td>
+                <td>{{ s.note_outils_collecte }}/5</td>
+                <td>{{ s.note_tableaux_bord }}/5</td>
+                <td>{{ s.note_appui_technique }}/5</td>
+                <td>{{ s.note_coordination }}/5</td>
                 <td>{{ s.note_globale }}/5</td>
+                <td>{{ s.get_utilite_dispositif_display }}</td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
                     <a href="{% url 'satisfactions:modifier_institution' s.pk %}">Modifier</a>
@@ -28,10 +40,11 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="4" class="empty-state">Aucune réponse enregistrée.</td></tr>
+            <tr><td colspan="11" class="empty-state">Aucune réponse enregistrée.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}

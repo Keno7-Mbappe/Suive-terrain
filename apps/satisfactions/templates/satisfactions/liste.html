@@ -11,16 +11,27 @@
     {% endif %}
 </div>
 <div class="panel">
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
-            <tr><th>Bénéficiaire</th><th>Cycle</th><th>Note globale</th><th>Recommande</th><th></th></tr>
+            <tr>
+                <th>Bénéficiaire</th><th>Cycle</th><th>Formation</th><th>Formateurs</th><th>Contenus</th>
+                <th>Équipements</th><th>Accueil</th><th>Note globale</th><th>Employabilité</th>
+                <th>Recommande</th><th></th>
+            </tr>
         </thead>
         <tbody>
             {% for s in satisfactions %}
             <tr>
                 <td>{{ s.beneficiaire }}</td>
                 <td>{{ s.cycle }}</td>
+                <td>{{ s.note_formation }}/5</td>
+                <td>{{ s.note_formateurs }}/5</td>
+                <td>{{ s.note_contenus }}/5</td>
+                <td>{{ s.note_equipements }}/5</td>
+                <td>{{ s.note_accueil }}/5</td>
                 <td>{{ s.note_globale }}/5</td>
+                <td>{{ s.get_amelioration_employabilite_display }}</td>
                 <td>{{ s.recommande|yesno:"Oui,Non" }}</td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
@@ -29,10 +40,11 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="empty-state">Aucune réponse enregistrée.</td></tr>
+            <tr><td colspan="11" class="empty-state">Aucune réponse enregistrée.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}

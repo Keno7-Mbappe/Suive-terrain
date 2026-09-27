@@ -16,6 +16,9 @@ class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
     context_object_name = "beneficiaires"
     paginate_by = 25
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("institution")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         population = self.get_queryset()
