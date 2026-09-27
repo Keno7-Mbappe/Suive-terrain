@@ -48,6 +48,8 @@ class Beneficiaire(models.Model):
     date_naissance = models.DateField("Date de naissance")
     tranche_age = models.CharField("Tranche d'âge", max_length=10, editable=False, blank=True)
     region = models.CharField("Région", max_length=30, choices=REGIONS)
+    quartier = models.CharField("Quartier / localité", max_length=100, blank=True)
+    niveau_etude = models.CharField("Niveau d'étude", max_length=100, blank=True)
     institution = models.ForeignKey(
         "referentiels.Institution", on_delete=models.PROTECT, related_name="beneficiaires",
         verbose_name="Institution",

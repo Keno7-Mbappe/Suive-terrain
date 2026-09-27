@@ -7,8 +7,8 @@ class BeneficiaireForm(forms.ModelForm):
     class Meta:
         model = Beneficiaire
         fields = [
-            "nom", "prenom", "sexe", "date_naissance", "region", "institution",
-            "telephone", "email", "date_enregistrement", "statut",
+            "nom", "prenom", "sexe", "date_naissance", "region", "quartier", "niveau_etude",
+            "institution", "telephone", "email", "date_enregistrement", "statut",
         ]
         widgets = {
             "date_naissance": forms.DateInput(attrs={"type": "date"}),

@@ -13,6 +13,7 @@ class Formation(models.Model):
         verbose_name="Bénéficiaire",
     )
     domaine = models.CharField("Domaine / spécialité", max_length=150)
+    centre = models.CharField("Centre de formation", max_length=150, blank=True)
     date_debut = models.DateField("Date de début")
     date_fin = models.DateField("Date de fin", null=True, blank=True)
     statut_formation = models.CharField("Statut", max_length=20, choices=STATUTS_FORMATION, default="en_cours")

@@ -13,5 +13,12 @@ staticfiles/
 # versionnées, à régénérer via `manage.py export_kobo_choices`.
 kobo_forms/media/*.csv
 
+# Fichiers Excel source des institutions (données nominatives réelles des
+# bénéficiaires - nom, téléphone) : importés en base via
+# `manage.py import_beneficiaires_excel`, jamais versionnés.
+PDCED-Skills_*-liste-nominative*.xlsx
+~$*.xlsx
+~$*.docx
+
 .DS_Store
 Thumbs.db
