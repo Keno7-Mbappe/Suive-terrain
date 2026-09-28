@@ -20,7 +20,9 @@ LIBELLES_DIMENSIONS = ["Formation", "Formateurs", "Contenus", "Équipements", "A
 DIMENSIONS_INSTITUTION = [
     "note_qualite_donnees", "note_outils_collecte", "note_tableaux_bord", "note_appui_technique", "note_coordination",
 ]
-DUREE_CACHE_SECONDES = 60
+# Le cache est vidé à chaque écriture faite par l'application (cf. signals.py) : la durée ne
+# borne que le retard des imports faits hors du serveur web (commande sync_kobo).
+DUREE_CACHE_SECONDES = 300
 
 
 def _taux(numerateur, denominateur):
