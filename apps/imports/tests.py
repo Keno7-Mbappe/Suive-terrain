@@ -211,7 +211,7 @@ class SoumissionActionsViewTests(TestCase):
         )
         self.client.force_login(self.validateur)
         response = self.client.post(reverse("imports:reessayer", args=[soumission.pk]))
-        self.assertRedirects(response, reverse("imports:liste"))
+        self.assertRedirects(response, reverse("imports:detail", args=[soumission.pk]))
         soumission.refresh_from_db()
         self.assertEqual(soumission.statut, "integre")
 

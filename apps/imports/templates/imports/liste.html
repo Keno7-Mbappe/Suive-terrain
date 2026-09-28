@@ -3,9 +3,14 @@
 {% block content %}
 <div class="hero">
     <div>
-        <h1>Contrôle des soumissions Kobo</h1>
-        <p>{{ nb_total }} soumission(s) &middot; {{ nb_nouveau }} en attente &middot; {{ nb_erreur }} en erreur &middot; {{ nb_integre }} intégrée(s)</p>
+        <h1>Validation des soumissions Kobo</h1>
+        <p>{{ nb_total }} soumission(s) &middot; <strong>{{ nb_nouveau }} à valider</strong> &middot; {{ nb_erreur }} en erreur &middot; {{ nb_integre }} intégrée(s)</p>
     </div>
+    <div class="actions-bar actions-bar-bas">
+    <form method="post" action="{% url 'imports:actualiser' %}" class="inline-form">
+        {% csrf_token %}
+        <button type="submit" class="primary-button">&#8635; Actualiser depuis Kobo</button>
+    </form>
     <form method="get" class="filters">
         <div class="filter-field">
             <label for="statut">Statut</label>
@@ -26,56 +31,38 @@
             </select>
         </div>
     </form>
+    </div>
 </div>
 <div class="panel">
+    <p class="panel-sub" style="margin-left:0">Chaque questionnaire reçu de Kobo attend ici une relecture : ouvrez-le pour le lire en entier, le corriger, le supprimer ou le valider. Il n'entre dans la base et le tableau de bord qu'une fois validé.</p>
+    <div class="table-scroll">
     <table class="data-table">
         <thead>
-            <tr><th>Formulaire</th><th>ID Kobo</th><th>Statut</th><th>Reçu le</th><th>Traité le</th><th>Données brutes</th><th>Actions</th></tr>
+            <tr><th>Formulaire</th><th>Personne concernée</th><th>Institution</th><th>Statut</th><th>Reçu le</th><th>Traité</th><th></th></tr>
         </thead>
         <tbody>
             {% for s in soumissions %}
             <tr>
                 <td>{{ s.get_type_formulaire_display }}</td>
-                <td>{{ s.kobo_submission_id }}</td>
+                <td>{{ s.personne_concernee }}</td>
+                <td>{{ s.institution|default:"-" }}</td>
                 <td>
                     {% if s.statut == "integre" %}<span class="badge badge-good">Intégré</span>
                     {% elif s.statut == "erreur" %}<span class="badge badge-critical">Erreur</span>
-                    {% elif s.statut == "doublon" %}<span class="badge badge-neutral">Doublon</span>
-                    {% else %}<span class="badge badge-warning">Nouveau</span>{% endif %}
-                    {% if s.erreur %}<div class="erreur-message">{{ s.erreur }}</div>{% endif %}
+                    {% elif s.statut == "doublon" %}<span class="badge badge-neutral">Écartée</span>
+                    {% else %}<span class="badge badge-warning">À valider</span>{% endif %}
+                    {% if s.est_corrigee %}<span class="badge badge-neutral">Corrigée</span>{% endif %}
                 </td>
                 <td>{{ s.recu_le|date:"d/m/Y H:i" }}</td>
-                <td>{{ s.traite_le|date:"d/m/Y H:i"|default:"-" }}</td>
-                <td>
-                    <details class="raw-data">
-                        <summary>Voir</summary>
-                        <pre>{{ s.donnees_brutes|pprint }}</pre>
-                    </details>
-                </td>
-                <td>
-                    <div class="row-actions">
-                        {% if s.statut == "nouveau" or s.statut == "erreur" %}
-                        <form method="post" action="{% url 'imports:reessayer' s.pk %}" class="inline-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                            <button type="submit" class="link-button">Réessayer</button>
-                        </form>
-                        {% endif %}
-                        {% if s.statut != "doublon" and s.statut != "integre" %}
-                        <form method="post" action="{% url 'imports:marquer_doublon' s.pk %}" class="inline-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                            <button type="submit" class="link-button">Marquer doublon</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </td>
+                <td>{% if s.traite_le %}{{ s.traite_le|date:"d/m/Y H:i" }}{% if s.traite_par %} &middot; {{ s.traite_par.get_username }}{% endif %}{% else %}-{% endif %}</td>
+                <td><a href="{% url 'imports:detail' s.pk %}">Ouvrir &rarr;</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="empty-state">Aucune soumission reçue pour l'instant.</td></tr>
+            <tr><td colspan="7" class="empty-state">Aucune soumission pour l'instant.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% if is_paginated %}
     <div class="pagination">
         {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&statut={{ filtre_statut }}&type={{ filtre_type }}">&laquo; Précédent</a>{% endif %}

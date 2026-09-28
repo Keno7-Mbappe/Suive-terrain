@@ -134,9 +134,13 @@ def _contexte_dashboard(request):
     nb_anomalies = _compter_anomalies(beneficiaires)
     nb_coordonnees_completes = beneficiaires.exclude(telephone="").exclude(email="").count()
     taux_completude = _taux(nb_coordonnees_completes, total_beneficiaires)
-    soumissions_kobo = KoboSoumission.objects.all()
+    # Les soumissions écartées (doublons, tests) ne comptent pas dans le taux de
+    # validation : elles ont été volontairement mises de côté par un validateur.
+    soumissions_kobo = KoboSoumission.objects.exclude(statut="doublon")
     nb_soumissions_kobo = soumissions_kobo.count()
     taux_validation_kobo = _taux(soumissions_kobo.filter(statut="integre").count(), nb_soumissions_kobo)
+    nb_soumissions_a_valider = soumissions_kobo.filter(statut="nouveau").count()
+    nb_soumissions_erreur = soumissions_kobo.filter(statut="erreur").count()
 
     regions_labels = dict(REGIONS)
     sexes_labels = dict(SEXES)
@@ -239,6 +243,9 @@ def _contexte_dashboard(request):
         "nb_anomalies": nb_anomalies,
         "taux_completude": taux_completude,
         "nb_soumissions_kobo": nb_soumissions_kobo,
+        "nb_soumissions_a_valider": nb_soumissions_a_valider,
+        "nb_soumissions_erreur": nb_soumissions_erreur,
+        "nb_soumissions_a_traiter": nb_soumissions_a_valider + nb_soumissions_erreur,
         "taux_validation_kobo": taux_validation_kobo,
         "nb_reponses_institution": nb_reponses_institution,
         "satisfaction_institution_globale": satisfaction_institution_globale,

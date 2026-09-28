@@ -2,10 +2,13 @@
 
 Étape 1 (sync_form) : récupère les soumissions brutes depuis l'API Kobo et les
 dépose telles quelles dans KoboSoumission (zone de staging), sans aucune
-transformation - pour ne jamais perdre de donnée brute.
+transformation - pour ne jamais perdre de donnée brute. Elles y restent
+"à valider" : rien n'entre dans la base ni le tableau de bord tant qu'un
+validateur ne les a pas relues (et éventuellement corrigées).
 
-Étape 2 (process_pending) : relit les soumissions "nouveau", les contrôle
-(bénéficiaire connu, pas de doublon) et les intègre dans les tables métier.
+Étape 2 (traiter_soumission) : appelée quand un validateur clique « Valider »
+(ou, en mode automatique, par process_pending) : intègre la version effective
+de la soumission (corrigée si elle l'a été) dans les tables métier.
 
 Le formulaire "suivi" fusionne suivi longitudinal ET satisfaction bénéficiaire
 en une seule soumission (question "faire_satisfaction" à l'intérieur du groupe
@@ -27,7 +30,8 @@ from apps.referentiels.models import CycleEnquete, Institution
 from apps.satisfactions.models import Satisfaction, SatisfactionInstitution
 from apps.suivis.models import Suivi
 
-from .models import KoboSoumission
+from .models import TYPES_FORMULAIRE, KoboSoumission
+from .schemas import TYPE_INSTITUTION_PAR_CODE
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +53,28 @@ def _resoudre_cycle(code_cycle):
 
 def _vers_bool_oui_non(valeur):
     return str(valeur or "").strip().lower() == "oui"
+
+
+def _resoudre_institution(code):
+    """Retrouve l'institution d'après le code du formulaire Kobo (INAP, EFTP, ANEFIP,
+    ONEQ, MENFOP) - ou son identifiant numérique, pour les formulaires qui exportent
+    la liste des institutions depuis la base. Retourne None si introuvable."""
+    code = str(code or "").strip()
+    if not code:
+        return None
+    if code.isdigit():
+        return Institution.objects.filter(pk=int(code)).first()
+    type_institution = TYPE_INSTITUTION_PAR_CODE.get(code.upper(), code.lower())
+    return Institution.objects.filter(type=type_institution).first()
+
+
+def institution_de_soumission(type_formulaire, donnees):
+    """Institution concernée par une soumission (sert au filtrage par institution
+    des validateurs rattachés à une seule structure)."""
+    if type_formulaire == "suivi":
+        beneficiaire = _get_beneficiaire(donnees.get("selection/id_beneficiaire"))
+        return beneficiaire.institution if beneficiaire else None
+    return _resoudre_institution(donnees.get("identification/institution"))
 
 
 KOBO_FIELDS_SUIVI = {
@@ -140,11 +166,39 @@ def sync_form(type_formulaire):
         _, created = KoboSoumission.objects.get_or_create(
             type_formulaire=type_formulaire,
             kobo_submission_id=submission_id,
-            defaults={"donnees_brutes": soumission},
+            defaults={
+                "donnees_brutes": soumission,
+                "institution": institution_de_soumission(type_formulaire, soumission),
+            },
         )
         if created:
             nouvelles += 1
     return {"recues": recues, "nouvelles": nouvelles}
+
+
+def _message_erreur_kobo(exc):
+    reponse = getattr(exc, "response", None)
+    if reponse is not None and reponse.status_code in (401, 403):
+        return "accès refusé par Kobo (jeton d'API invalide ou sans droit sur ce formulaire)"
+    if reponse is not None and reponse.status_code == 404:
+        return "formulaire introuvable ou non déployé sur Kobo"
+    return f"Kobo injoignable ou en erreur ({exc.__class__.__name__})"
+
+
+def synchroniser_tout():
+    """Rapatrie les nouvelles soumissions de chaque formulaire Kobo dans la zone de
+    validation. Un formulaire indisponible (non déployé, jeton refusé, réseau) est
+    signalé sans empêcher la synchronisation des autres.
+    Retourne [{"libelle", "recues", "nouvelles", "erreur"}]."""
+    resultats = []
+    for type_formulaire, libelle in TYPES_FORMULAIRE:
+        try:
+            resultat = sync_form(type_formulaire)
+            resultats.append({"libelle": libelle, "erreur": None, **resultat})
+        except requests.RequestException as exc:
+            logger.warning("Synchronisation Kobo '%s' impossible : %s", type_formulaire, exc)
+            resultats.append({"libelle": libelle, "recues": 0, "nouvelles": 0, "erreur": _message_erreur_kobo(exc)})
+    return resultats
 
 
 def _get_beneficiaire(id_beneficiaire):
@@ -160,12 +214,21 @@ def _integrer_suivi(donnees):
     if beneficiaire is None:
         raise ValueError(f"Bénéficiaire introuvable : {donnees.get(champs['id_beneficiaire'])}")
 
+    vague = donnees.get(champs["vague"])
+    if not vague:
+        # Le formulaire ne pose pas la vague quand le contact échoue : on refuse
+        # l'intégration plutôt que d'écraser au hasard la ligne d'une autre vague,
+        # le validateur précise la vague dans l'écran de correction.
+        raise ValueError(
+            "Vague de suivi manquante (M+3, M+6 ou M+12) : corrigez la soumission avant de la valider."
+        )
+
     duree_recherche = donnees.get(champs["duree_recherche_mois"])
     Suivi.objects.update_or_create(
         beneficiaire=beneficiaire,
-        vague=donnees.get(champs["vague"]),
+        vague=vague,
         defaults={
-            "date_suivi": parse_date(donnees.get(champs["date_suivi"])) or timezone.now().date(),
+            "date_suivi": parse_date(donnees.get(champs["date_suivi"]) or "") or timezone.now().date(),
             "canal": donnees.get(champs["canal"], "") or "",
             "enqueteur": donnees.get(champs["enqueteur"], "") or "",
             "issue_contact": donnees.get(champs["issue_contact"], ""),
@@ -215,7 +278,9 @@ def _integrer_satisfaction(beneficiaire, donnees):
 
 def _integrer_satisfaction_institution(donnees):
     champs = KOBO_FIELDS_SATISFACTION_INSTITUTION
-    institution = Institution.objects.get(pk=donnees.get(champs["id_institution"]))
+    institution = _resoudre_institution(donnees.get(champs["id_institution"]))
+    if institution is None:
+        raise ValueError(f"Institution introuvable : {donnees.get(champs['id_institution'])}")
     code_cycle = donnees.get(champs["id_cycle"])
     cycle = _resoudre_cycle(code_cycle)
     if cycle is None:
@@ -245,16 +310,16 @@ INTEGRATEURS = {
 }
 
 
-def traiter_soumission(soumission):
+def traiter_soumission(soumission, utilisateur=None):
     """Tente d'intégrer une soumission unique dans les tables métier et
-    enregistre le résultat sur l'objet. Partagé par la synchronisation
-    automatique (process_pending) et le bouton « Réessayer » de la page de
-    contrôle des soumissions - une soumission en erreur peut être corrigée
-    entre-temps (ex : le bénéficiaire manquant a été créé) puis relancée sans
-    dupliquer la logique d'intégration."""
+    enregistre le résultat sur l'objet. Utilisée par le bouton « Valider » (ou
+    « Réessayer ») de l'écran de validation, et par process_pending en mode
+    automatique. C'est la version effective qui est intégrée : les données
+    corrigées par un validateur si elles existent, sinon les données brutes de Kobo."""
     integrateur = INTEGRATEURS[soumission.type_formulaire]
+    donnees = soumission.donnees_effectives
     try:
-        integrateur(soumission.donnees_brutes)
+        integrateur(donnees)
     except Exception as exc:  # noqa: BLE001 - on veut journaliser puis continuer
         soumission.statut = "erreur"
         soumission.erreur = str(exc)
@@ -264,8 +329,10 @@ def traiter_soumission(soumission):
         soumission.statut = "integre"
         soumission.erreur = ""
         reussite = True
+    soumission.institution = institution_de_soumission(soumission.type_formulaire, donnees)
     soumission.traite_le = timezone.now()
-    soumission.save(update_fields=["statut", "erreur", "traite_le"])
+    soumission.traite_par = utilisateur
+    soumission.save(update_fields=["statut", "erreur", "institution", "traite_le", "traite_par"])
     return reussite
 
 
@@ -278,3 +345,56 @@ def process_pending():
         else:
             resultats["erreur"] += 1
     return resultats
+
+
+def controler_soumission(soumission):
+    """Points d'attention à montrer au validateur AVANT de valider : incohérences
+    entre la soumission et la base (bénéficiaire inconnu, nom différent de celui de
+    la liste Kobo, vague manquante, écrasement d'une ligne existante...).
+    Retourne [(niveau, message)] avec niveau in {"erreur", "attention", "info"}."""
+    donnees = soumission.donnees_effectives
+    alertes = []
+
+    if soumission.type_formulaire == "suivi":
+        identifiant = donnees.get("selection/id_beneficiaire")
+        beneficiaire = _get_beneficiaire(identifiant)
+        if beneficiaire is None:
+            alertes.append(("erreur", f"Aucun bénéficiaire ne porte l'identifiant « {identifiant} » dans la base."))
+        else:
+            nom_kobo = " ".join(str(donnees.get("selection/nom_prenom") or "").casefold().split())
+            nom_base = " ".join(f"{beneficiaire.prenom} {beneficiaire.nom}".casefold().split())
+            if nom_kobo and nom_kobo != nom_base:
+                alertes.append((
+                    "attention",
+                    f"Le nom affiché par Kobo (« {donnees.get('selection/nom_prenom')} ») ne correspond pas au nom "
+                    f"en base pour cet identifiant (« {beneficiaire.prenom} {beneficiaire.nom} »). "
+                    "La liste de bénéficiaires du formulaire Kobo est peut-être désynchronisée.",
+                ))
+            vague = donnees.get("module_suivi/vague")
+            if vague and Suivi.objects.filter(beneficiaire=beneficiaire, vague=vague).exists():
+                alertes.append(("info", "Un suivi existe déjà pour cette vague : la validation le remplacera."))
+        if not donnees.get("module_suivi/vague"):
+            alertes.append((
+                "attention",
+                "Vague de suivi manquante (le formulaire ne la demande pas quand le contact échoue) : "
+                "précisez-la en corrigeant la soumission.",
+            ))
+        if donnees.get("issue_contact") == "joint" and not donnees.get("module_suivi/situation"):
+            alertes.append(("attention", "Contact joint mais aucune situation actuelle n'est renseignée."))
+        if _vers_bool_oui_non(donnees.get("bascule/faire_satisfaction")) and _resoudre_cycle(donnees.get("bascule/cycle")) is None:
+            alertes.append(("erreur", "Module satisfaction réalisé mais le cycle d'enquête est absent ou inconnu."))
+    else:
+        institution = _resoudre_institution(donnees.get("identification/institution"))
+        if institution is None:
+            alertes.append(("erreur", "Institution introuvable dans la base."))
+        cycle = _resoudre_cycle(donnees.get("identification/cycle"))
+        if cycle is None:
+            alertes.append(("erreur", "Cycle d'enquête absent ou inconnu."))
+        elif institution and SatisfactionInstitution.objects.filter(institution=institution, cycle=cycle).exists():
+            alertes.append(("info", "Cette institution a déjà répondu pour ce cycle : la validation remplacera sa réponse."))
+
+    if soumission.est_corrigee:
+        alertes.append(("info", "Cette soumission a été corrigée : c'est la version corrigée qui sera intégrée."))
+    if soumission.erreur:
+        alertes.append(("erreur", f"Dernière tentative d'intégration : {soumission.erreur}"))
+    return alertes

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Corriger la soumission #{{ soumission.kobo_submission_id }} &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <a href="{% url 'imports:detail' soumission.pk %}" class="retour-lien">&larr; Retour à la soumission</a>
+        <h1>Corriger la soumission</h1>
+        <p>{{ soumission.get_type_formulaire_display }} &middot; {{ soumission.personne_concernee }}. Les données reçues de Kobo sont conservées telles quelles ; vos corrections sont enregistrées à part et ce sont elles qui seront intégrées à la validation.</p>
+    </div>
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    {% for titre, champs in form.sections %}
+    <div class="panel form-panel" style="--accent: var(--c1-blue)">
+        <h3>{{ titre }}</h3>
+        <div class="crud-form">
+            {% for champ in champs %}
+                {% if champ.field.widget.allow_multiple_selected %}
+                <div class="champ-multiple">
+                    <label>{{ champ.label }}</label>
+                    <div class="options">{{ champ }}</div>
+                    {{ champ.errors }}
+                </div>
+                {% else %}
+                <p>{{ champ.label_tag }} {{ champ }} {{ champ.errors }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    <div class="form-actions form-actions-page">
+        <button type="submit" class="primary-button">Enregistrer les corrections</button>
+        <a href="{% url 'imports:detail' soumission.pk %}" class="secondary-button">Annuler</a>
+    </div>
+</form>
+{% endblock %}

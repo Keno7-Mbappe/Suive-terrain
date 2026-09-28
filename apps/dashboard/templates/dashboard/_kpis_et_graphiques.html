@@ -1,4 +1,16 @@
 {% load static %}
+{% if not est_public and user.profile.is_validateur and nb_soumissions_a_traiter %}
+<a class="banniere-validation" href="{% url 'imports:liste' %}{% if nb_soumissions_a_valider %}?statut=nouveau{% else %}?statut=erreur{% endif %}">
+    <span class="banniere-nombre">{{ nb_soumissions_a_traiter }}</span>
+    <span class="banniere-texte">
+        <strong>soumission(s) Kobo à traiter</strong>
+        {% if nb_soumissions_a_valider %}&middot; {{ nb_soumissions_a_valider }} à valider{% endif %}
+        {% if nb_soumissions_erreur %}&middot; {{ nb_soumissions_erreur }} en erreur{% endif %}
+        <span class="banniere-aide">Relisez-les, corrigez-les si besoin, puis validez-les : elles n'apparaissent dans les indicateurs ci-dessous qu'une fois validées.</span>
+    </span>
+    <span class="banniere-lien">Ouvrir la file de validation &rarr;</span>
+</a>
+{% endif %}
 <div class="kpi-row">
     <div class="kpi-card" style="--accent: var(--c1-blue)">
         <div class="kpi-top">
@@ -127,7 +139,7 @@
         <div class="stat-line">
             <span class="item"><strong>{{ nb_doublons_potentiels }}</strong> doublon(s) potentiel(s)</span>
             <span class="item"><strong>{{ nb_anomalies }}</strong> anomalie(s) détectée(s)</span>
-            <span class="item"><strong>{{ nb_soumissions_kobo }}</strong> soumission(s) Kobo reçue(s)</span>
+            <span class="item"><a href="{% url 'imports:liste' %}"><strong>{{ nb_soumissions_kobo }}</strong> soumission(s) Kobo reçue(s)</a></span>
         </div>
     </div>
 

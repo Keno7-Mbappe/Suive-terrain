@@ -13,6 +13,10 @@ staticfiles/
 # versionnées, à régénérer via `manage.py export_kobo_choices`.
 kobo_forms/media/*.csv
 
+# Sauvegardes de la définition des formulaires Kobo avant republication (contiennent la liste
+# nominative des bénéficiaires).
+kobo_forms/sauvegardes/
+
 # Fichiers Excel source des institutions (données nominatives réelles des
 # bénéficiaires - nom, téléphone) : importés en base via
 # `manage.py import_beneficiaires_excel`, jamais versionnés.

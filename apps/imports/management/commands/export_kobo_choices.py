@@ -24,7 +24,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from apps.beneficiaires.models import Beneficiaire
+from apps.imports.kobo_beneficiaires import lignes_beneficiaires
 from apps.referentiels.models import Institution
 
 
@@ -44,23 +44,7 @@ class Command(BaseCommand):
 
     def _ecrire_beneficiaires(self, dossier_sortie):
         entetes = ["name", "label", "nom_prenom", "institution", "region", "date_fin_formation", "telephone"]
-        lignes = []
-        for b in (
-            Beneficiaire.objects.select_related("institution")
-            .prefetch_related("formations")
-            .order_by("nom", "prenom")
-        ):
-            derniere_formation = b.formations.first()  # Formation.Meta.ordering = ["-date_debut"]
-            date_fin_formation = derniere_formation.date_fin if derniere_formation else None
-            lignes.append((
-                b.id_beneficiaire,
-                f"{b.id_beneficiaire} — {b.nom} {b.prenom} ({b.institution.libelle})",
-                f"{b.prenom} {b.nom}",
-                b.institution.libelle,
-                b.get_region_display(),
-                date_fin_formation.isoformat() if date_fin_formation else "",
-                b.telephone,
-            ))
+        lignes = [tuple(ligne[e] for e in entetes) for ligne in lignes_beneficiaires()]
         self._ecrire_csv(dossier_sortie, "beneficiaires.csv", entetes, lignes)
 
     def _ecrire_csv(self, dossier_sortie, nom_fichier, entetes, lignes):

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Soumission #{{ soumission.kobo_submission_id }} &ndash; PDCED Skills{% endblock %}
+{% block content %}
+<div class="hero">
+    <div>
+        <a href="{% url 'imports:liste' %}" class="retour-lien">&larr; Toutes les soumissions</a>
+        <h1>{{ soumission.get_type_formulaire_display }}</h1>
+        <p>
+            {{ soumission.personne_concernee }} &middot; reçue le {{ soumission.recu_le|date:"d/m/Y à H:i" }} &middot;
+            {% if soumission.statut == "integre" %}<span class="badge badge-good">Intégrée</span>
+            {% elif soumission.statut == "erreur" %}<span class="badge badge-critical">Erreur</span>
+            {% elif soumission.statut == "doublon" %}<span class="badge badge-neutral">Écartée</span>
+            {% else %}<span class="badge badge-warning">À valider</span>{% endif %}
+            {% if soumission.est_corrigee %}<span class="badge badge-neutral">Corrigée</span>{% endif %}
+        </p>
+    </div>
+    <div class="actions-bar">
+        {% if peut_valider %}
+        <form method="post" action="{% url 'imports:valider' soumission.pk %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="primary-button">Valider et intégrer</button>
+        </form>
+        {% endif %}
+        <a href="{% url 'imports:corriger' soumission.pk %}" class="secondary-button">Corriger</a>
+        {% if peut_supprimer %}
+        <form method="post" action="{% url 'imports:marquer_doublon' soumission.pk %}" class="inline-form">
+            {% csrf_token %}
+            <button type="submit" class="secondary-button" {% if soumission.statut == "doublon" %}disabled{% endif %}>Écarter</button>
+        </form>
+        <form method="post" action="{% url 'imports:supprimer' soumission.pk %}" class="inline-form"
+              onsubmit="return confirm('Supprimer définitivement cette soumission ? Elle sera de nouveau téléchargée depuis Kobo à la prochaine synchronisation si elle y existe encore.');">
+            {% csrf_token %}
+            <button type="submit" class="danger-button">Supprimer</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if alertes %}
+<div class="alertes">
+    {% for niveau, message in alertes %}
+    <div class="alerte alerte-{{ niveau }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if beneficiaire %}
+<div class="panel" style="--accent: var(--c3-aqua)">
+    <h3>Bénéficiaire en base</h3>
+    <dl class="detail-grid">
+        <div><dt>Identifiant</dt><dd>{{ beneficiaire.id_beneficiaire }}</dd></div>
+        <div><dt>Nom et prénom</dt><dd>{{ beneficiaire.prenom }} {{ beneficiaire.nom }}</dd></div>
+        <div><dt>Institution</dt><dd>{{ beneficiaire.institution }}</dd></div>
+        <div><dt>Région</dt><dd>{{ beneficiaire.get_region_display }}</dd></div>
+        <div><dt>Téléphone</dt><dd>{{ beneficiaire.telephone|default:"—" }}</dd></div>
+    </dl>
+</div>
+{% endif %}
+
+{% for titre, lignes in sections %}
+<div class="panel" style="--accent: var(--c1-blue)">
+    <h3>{{ titre }}</h3>
+    <dl class="detail-grid">
+        {% for libelle, valeur, cle in lignes %}
+        <div class="{% if not valeur %}vide{% endif %}">
+            <dt>{{ libelle }}</dt>
+            <dd>{% if valeur %}{{ valeur|linebreaksbr }}{% else %}Non renseigné{% endif %}</dd>
+        </div>
+        {% endfor %}
+    </dl>
+</div>
+{% endfor %}
+
+{% if rappel %}
+<details class="panel detail-technique">
+    <summary>Rappel affiché à l'enquêteur dans Kobo</summary>
+    <dl class="detail-grid">
+        {% for libelle, valeur in rappel %}<div><dt>{{ libelle }}</dt><dd>{{ valeur }}</dd></div>{% endfor %}
+    </dl>
+</details>
+{% endif %}
+
+<details class="panel detail-technique">
+    <summary>Informations techniques et données brutes reçues de Kobo</summary>
+    <dl class="detail-grid">
+        {% for libelle, valeur in metadonnees %}<div><dt>{{ libelle }}</dt><dd>{{ valeur }}</dd></div>{% endfor %}
+        <div><dt>Traitée par</dt><dd>{{ soumission.traite_par.get_username|default:"—" }}</dd></div>
+    </dl>
+    <pre class="raw-json">{{ soumission.donnees_brutes|pprint }}</pre>
+</details>
+{% endblock %}

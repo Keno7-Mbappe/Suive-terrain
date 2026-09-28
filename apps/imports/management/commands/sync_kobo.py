@@ -1,31 +1,37 @@
 from django.core.management.base import BaseCommand
 
-from apps.imports.models import TYPES_FORMULAIRE
-from apps.imports.services import process_pending, sync_form
+from apps.imports.services import process_pending, synchroniser_tout
 
 
 class Command(BaseCommand):
     help = (
-        "Synchronise les soumissions KoboToolbox vers la zone de staging, puis les "
-        "intègre dans les tables métier. À planifier régulièrement (cron / tâche planifiée)."
+        "Rapatrie les nouvelles soumissions KoboToolbox dans la zone de validation "
+        "(page « Soumissions Kobo »), où un validateur les relit avant qu'elles "
+        "n'entrent dans la base et le tableau de bord. À planifier régulièrement "
+        "(cron / tâche planifiée)."
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--staging-only",
+            "--integrer",
             action="store_true",
-            help="Ne fait que rapatrier les soumissions Kobo, sans les intégrer.",
+            help=(
+                "Intègre aussi immédiatement dans la base toutes les soumissions à valider, "
+                "sans relecture humaine (déconseillé hors tests ou import de reprise)."
+            ),
         )
 
     def handle(self, *args, **options):
-        for type_formulaire, libelle in TYPES_FORMULAIRE:
-            resultat = sync_form(type_formulaire)
+        for resultat in synchroniser_tout():
+            if resultat["erreur"]:
+                self.stdout.write(self.style.WARNING(f"[{resultat['libelle']}] ignoré : {resultat['erreur']}."))
+                continue
             self.stdout.write(
-                f"[{libelle}] {resultat['recues']} soumission(s) reçue(s), "
-                f"{resultat['nouvelles']} nouvelle(s)."
+                f"[{resultat['libelle']}] {resultat['recues']} soumission(s) reçue(s), "
+                f"{resultat['nouvelles']} nouvelle(s) à valider."
             )
 
-        if options["staging_only"]:
+        if not options["integrer"]:
             return
 
         resultat = process_pending()
