@@ -7,56 +7,110 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
-<body>
-    <header class="topbar">
-        <div class="topbar-brand">
-            <span class="dot"></span>
-            <strong>PDCED &ndash; Skills</strong>
-            <span class="subtitle">Suivi des bénéficiaires de formation</span>
-        </div>
-        {% if user.is_authenticated %}
-        <div class="topbar-user">
-            <span>{{ user.get_username }}{% if user.profile %} &middot; {{ user.profile.get_role_display }}{% endif %}</span>
-            <form action="{% url 'logout' %}" method="post" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="link-button">Déconnexion</button>
-            </form>
-        </div>
-        {% else %}
-        <div class="topbar-user">
-            <a href="{% url 'login' %}" class="secondary-button">Espace institutions</a>
-        </div>
-        {% endif %}
-    </header>
-    {% if user.is_authenticated %}
+<body class="{% block body_class %}{% endblock %}">
+{% if user.is_authenticated %}
+<div class="app">
     {% with section=request.resolver_match.app_name %}
-    <nav class="nav">
-        <a href="{% url 'dashboard:index' %}" class="{% if section == 'dashboard' %}active{% endif %}">Tableau de bord</a>
-        <a href="{% url 'beneficiaires:liste' %}" class="{% if section == 'beneficiaires' %}active{% endif %}">Bénéficiaires</a>
-        <a href="{% url 'formations:liste' %}" class="{% if section == 'formations' %}active{% endif %}">Formations</a>
-        <a href="{% url 'certifications:liste' %}" class="{% if section == 'certifications' %}active{% endif %}">Certifications</a>
-        <a href="{% url 'insertions:liste' %}" class="{% if section == 'insertions' %}active{% endif %}">Insertions</a>
-        <a href="{% url 'suivis:liste' %}" class="{% if section == 'suivis' %}active{% endif %}">Suivis</a>
-        <a href="{% url 'satisfactions:liste' %}" class="{% if section == 'satisfactions' %}active{% endif %}">Satisfactions</a>
-        <a href="{% url 'reporting:index' %}" class="{% if section == 'reporting' %}active{% endif %}">Rapports</a>
-        {% if user.profile.is_validateur %}
-        <a href="{% url 'imports:liste' %}" class="{% if section == 'imports' %}active{% endif %}">Soumissions Kobo</a>
-        {% endif %}
-    </nav>
+    <aside class="sidebar">
+        <a href="{% url 'dashboard:index' %}" class="brand" title="PDCED – Skills">
+            <span class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg>
+            </span>
+            <span class="brand-name">PDCED Skills<small>Suivi des bénéficiaires</small></span>
+        </a>
+        <nav class="nav-list" aria-label="Navigation principale">
+            <a href="{% url 'dashboard:index' %}" title="Tableau de bord" class="nav-link {% if section == 'dashboard' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                <span>Tableau de bord</span>
+            </a>
+            <a href="{% url 'beneficiaires:liste' %}" title="Bénéficiaires" class="nav-link {% if section == 'beneficiaires' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Bénéficiaires</span>
+            </a>
+            <a href="{% url 'formations:liste' %}" title="Formations" class="nav-link {% if section == 'formations' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>
+                <span>Formations</span>
+            </a>
+            <a href="{% url 'certifications:liste' %}" title="Certifications" class="nav-link {% if section == 'certifications' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg>
+                <span>Certifications</span>
+            </a>
+            <a href="{% url 'insertions:liste' %}" title="Insertions" class="nav-link {% if section == 'insertions' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                <span>Insertions</span>
+            </a>
+            <a href="{% url 'suivis:liste' %}" title="Suivis" class="nav-link {% if section == 'suivis' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span>Suivis</span>
+            </a>
+            <a href="{% url 'satisfactions:liste' %}" title="Satisfactions" class="nav-link {% if section == 'satisfactions' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+                <span>Satisfactions</span>
+            </a>
+            <a href="{% url 'reporting:index' %}" title="Rapports" class="nav-link {% if section == 'reporting' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                <span>Rapports</span>
+            </a>
+            {% if user.profile.is_validateur %}
+            <div class="nav-sep"></div>
+            <a href="{% url 'imports:liste' %}" title="Soumissions Kobo" class="nav-link {% if section == 'imports' %}active{% endif %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                <span>Soumissions Kobo</span>
+                {% if nav_soumissions_a_traiter %}<span class="nav-count" title="À traiter">{{ nav_soumissions_a_traiter }}</span>{% endif %}
+            </a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-bas">
+            <a href="{% url 'dashboard:public' %}" title="Vue publique" class="nav-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Vue publique</span>
+            </a>
+            <div class="user-chip">
+                <span class="user-avatar">{{ user.get_username|slice:":1" }}</span>
+                <span class="user-info">
+                    <strong>{{ user.get_username }}</strong>
+                    <span>{% if user.profile %}{{ user.profile.get_role_display }}{% else %}Utilisateur{% endif %}</span>
+                </span>
+                <form action="{% url 'logout' %}" method="post" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="link-button" title="Déconnexion" aria-label="Déconnexion">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
     {% endwith %}
-    {% endif %}
-    <main class="page">
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-            <li class="{{ message.tags }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% block content %}{% endblock %}
-    </main>
+{% else %}
+    {% block publicbar %}
+    <header class="publicbar">
+        <a href="{% url 'dashboard:public' %}" class="brand">
+            <span class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg>
+            </span>
+            <span class="brand-name">PDCED Skills<small>Suivi des bénéficiaires de formation</small></span>
+        </a>
+        <a href="{% url 'login' %}" class="primary-button">Espace institutions</a>
+    </header>
+    {% endblock %}
+{% endif %}
+    <div class="app-main">
+        <main class="page">
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+{% if user.is_authenticated %}
+</div>
+{% endif %}
 </body>
 </html>

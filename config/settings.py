@@ -3,6 +3,7 @@ Django settings for the PDCED - Skills project.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -82,12 +83,21 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.imports.context_processors.soumissions_a_traiter",
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+# Cache en mémoire du processus (tableau de bord, badge du menu) : suffisant pour un
+# seul processus gunicorn, et sans effet pendant les tests (chaque test doit voir la
+# base telle qu'il l'a préparée).
+if sys.argv[1:2] == ["test"]:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
+else:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "pdced"}}
 
 
 # Database

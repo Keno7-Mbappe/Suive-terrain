@@ -261,9 +261,12 @@ class FluxDeValidationTests(TestCase):
         self.client.force_login(self.validateur)
         interne = self.client.get(reverse("dashboard:index"))
         self.assertEqual(interne.context["nb_soumissions_a_valider"], 1)
-        self.assertContains(interne, "soumission(s) Kobo à traiter")
+        self.assertContains(interne, "soumission Kobo à traiter")  # bouton d'alerte du tableau de bord
+        self.assertContains(interne, 'class="nav-count"')  # pastille du menu latéral
         self.client.logout()
-        self.assertNotContains(self.client.get(reverse("dashboard:public")), "soumission(s) Kobo à traiter")
+        publique = self.client.get(reverse("dashboard:public"))
+        self.assertNotContains(publique, "Kobo à traiter")
+        self.assertNotContains(publique, 'class="nav-count"')
 
 
 class PublierBeneficiairesKoboTests(TestCase):

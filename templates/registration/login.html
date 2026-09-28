@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Connexion &ndash; PDCED Skills{% endblock %}
+{% block publicbar %}{% endblock %}
 {% block content %}
 <div class="login-wrapper">
     <div class="login-brand">
-        <span class="login-logo"></span>
+        <span class="login-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg></span>
         <strong>PDCED &ndash; Skills</strong>
     </div>
     <h1>Connexion</h1>
@@ -19,5 +20,6 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit">Se connecter</button>
     </form>
+    <p class="login-retour"><a href="{% url 'dashboard:public' %}">&larr; Voir les résultats publics</a></p>
 </div>
 {% endblock %}

@@ -68,9 +68,41 @@ class DashboardViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Qualité des données")
 
-    def test_taux_completude_avec_coordonnees_partielles(self):
+    def test_taux_completude_mesure_la_joignabilite_par_telephone(self):
         _beneficiaire(self.institution, telephone="77000000", email="")
-        _beneficiaire(self.institution, telephone="77000001", email="test@example.com")
+        _beneficiaire(self.institution, telephone="", email="test@example.com")
         self.client.force_login(self.admin)
         response = self.client.get(reverse("dashboard:index"))
         self.assertEqual(response.context["taux_completude"], 50.0)
+
+    def test_dashboard_sans_donnees_affiche_les_etats_vides(self):
+        response = self.client.get(reverse("dashboard:public"))
+        self.assertEqual(response.context["total_beneficiaires"], 0)
+        self.assertContains(response, "Pas encore de réponses")
+        self.assertContains(response, "Pas encore d'insertions")
+
+    def test_filtres_non_numeriques_sont_ignores(self):
+        response = self.client.get(reverse("dashboard:public"), {"cycle": "abc", "institution": "1; DROP TABLE"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["filtre_cycle"], "")
+        self.assertEqual(response.context["filtre_institution"], "")
+
+    def test_parcours_et_taux_de_passage(self):
+        formee = _beneficiaire(self.institution, nom="Formee", sexe="F")
+        _beneficiaire(self.institution, nom="Inscrit")
+        Formation.objects.create(
+            beneficiaire=formee, domaine="Informatique", date_debut=date(2025, 1, 1), statut_formation="achevee"
+        )
+        Certification.objects.create(beneficiaire=formee, type_certificat="Certificat", date_certification=date(2025, 7, 1))
+        response = self.client.get(reverse("dashboard:public"))
+        tunnel = {etape["libelle"]: etape for etape in response.context["tunnel"]}
+        self.assertEqual([tunnel[k]["valeur"] for k in ("Inscrits", "Formés", "Certifiés", "Insérés")], [2, 1, 1, 0])
+        self.assertEqual(tunnel["Formés"]["conversion"], 50.0)
+        self.assertEqual(tunnel["Certifiés"]["conversion"], 100.0)
+        self.assertEqual(response.context["sexe"]["femmes"], 1)
+
+    def test_dashboard_public_n_expose_aucune_donnee_nominative(self):
+        _beneficiaire(self.institution, nom="Nomtresspecifique", prenom="Prenomtresspecifique")
+        response = self.client.get(reverse("dashboard:public"))
+        self.assertNotContains(response, "Nomtresspecifique")
+        self.assertNotContains(response, "Prenomtresspecifique")
