@@ -101,6 +101,21 @@ class DashboardViewsTests(TestCase):
         self.assertEqual(tunnel["Certifiés"]["conversion"], 100.0)
         self.assertEqual(response.context["sexe"]["femmes"], 1)
 
+    def test_pages_declarent_un_viewport_adapte_aux_telephones(self):
+        for url in (reverse("dashboard:public"), reverse("login")):
+            self.assertContains(self.client.get(url), 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"')
+
+    def test_menu_mobile_reserve_aux_utilisateurs_connectes(self):
+        self.client.force_login(self.admin)
+        interne = self.client.get(reverse("dashboard:index"))
+        self.assertContains(interne, 'id="menu-bouton"')
+        self.assertContains(interne, 'aria-controls="menu-lateral"')
+        self.assertContains(interne, 'id="menu-lateral"')
+        self.client.logout()
+        publique = self.client.get(reverse("dashboard:public"))
+        self.assertNotContains(publique, 'id="menu-bouton"')
+        self.assertContains(publique, "Espace institutions")
+
     def test_dashboard_public_n_expose_aucune_donnee_nominative(self):
         _beneficiaire(self.institution, nom="Nomtresspecifique", prenom="Prenomtresspecifique")
         response = self.client.get(reverse("dashboard:public"))

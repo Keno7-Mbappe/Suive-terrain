@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#FF7A00">
     <title>{% block title %}PDCED - Skills{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +15,8 @@
 {% if user.is_authenticated %}
 <div class="app">
     {% with section=request.resolver_match.app_name %}
-    <aside class="sidebar">
+    <div class="voile" data-menu-fermer></div>
+    <aside class="sidebar" id="menu-lateral" aria-label="Menu">
         <a href="{% url 'dashboard:index' %}" class="brand" title="PDCED – Skills">
             <span class="brand-mark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg>
@@ -98,6 +100,23 @@
     {% endblock %}
 {% endif %}
     <div class="app-main">
+        {% if user.is_authenticated %}
+        <header class="mobilebar">
+            <button type="button" class="mobilebar-menu" id="menu-bouton" aria-controls="menu-lateral" aria-expanded="false" aria-label="Ouvrir le menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <a href="{% url 'dashboard:index' %}" class="mobilebar-brand">
+                <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg></span>
+                <strong>PDCED Skills</strong>
+            </a>
+            {% if nav_soumissions_a_traiter %}
+            <a href="{% url 'imports:liste' %}" class="mobilebar-alerte" title="Soumissions Kobo à traiter" aria-label="{{ nav_soumissions_a_traiter }} soumission(s) Kobo à traiter">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                <b>{{ nav_soumissions_a_traiter }}</b>
+            </a>
+            {% endif %}
+        </header>
+        {% endif %}
         <main class="page">
             {% if messages %}
             <ul class="messages">
@@ -112,5 +131,46 @@
 {% if user.is_authenticated %}
 </div>
 {% endif %}
+<script>
+(function () {
+    // Menu latéral en tiroir sur téléphone et tablette.
+    var corps = document.body, bouton = document.getElementById("menu-bouton");
+    function basculer(ouvert) {
+        corps.classList.toggle("menu-ouvert", ouvert);
+        if (bouton) { bouton.setAttribute("aria-expanded", ouvert ? "true" : "false"); }
+    }
+    if (bouton) {
+        bouton.addEventListener("click", function () { basculer(!corps.classList.contains("menu-ouvert")); });
+        Array.prototype.forEach.call(document.querySelectorAll("[data-menu-fermer]"), function (el) {
+            el.addEventListener("click", function () { basculer(false); });
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && corps.classList.contains("menu-ouvert")) { basculer(false); bouton.focus(); }
+        });
+        window.matchMedia("(min-width: 1001px)").addEventListener("change", function () { basculer(false); });
+    }
+
+    // Tableaux : chaque cellule reçoit l'intitulé de sa colonne, ce qui permet de les
+    // afficher en fiches sur téléphone (sans JavaScript, ils défilent horizontalement).
+    Array.prototype.forEach.call(document.querySelectorAll("table.data-table"), function (table) {
+        var titres = Array.prototype.map.call(table.querySelectorAll("thead th"), function (th) { return th.textContent.trim(); });
+        Array.prototype.forEach.call(table.querySelectorAll("tbody tr"), function (ligne) {
+            var col = 0;
+            Array.prototype.forEach.call(ligne.children, function (cellule) {
+                if (cellule.colSpan > 1) { col += cellule.colSpan; return; }
+                var titre = titres[col];
+                col += 1;
+                if (!cellule.textContent.trim() && !cellule.children.length) { cellule.classList.add("cellule-vide"); return; }
+                if (titre) { cellule.setAttribute("data-label", titre); }
+                var boite = document.createElement("span");
+                boite.className = "cellule-valeur";
+                while (cellule.firstChild) { boite.appendChild(cellule.firstChild); }
+                cellule.appendChild(boite);
+            });
+        });
+        table.classList.add("table-cartes");
+    });
+})();
+</script>
 </body>
 </html>
