@@ -42,40 +42,40 @@
                 <span class="kpi-label">Bénéficiaires</span>
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
             </div>
-            <div class="kpi-value">{{ total_beneficiaires }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">Enregistrés</span><span class="badge badge-neutre">{{ sexe.pct_femmes|floatformat:"0" }} % de femmes</span></div>
+            <div class="kpi-value" data-compte="{{ total_beneficiaires }}">{{ total_beneficiaires }}</div>
+            <div class="kpi-bottom"><span class="kpi-sub">Enregistrés</span><span class="badge badge-neutre" data-compte="{{ sexe.pct_femmes|stringformat:'.1f' }}" data-suffixe=" % de femmes">{{ sexe.pct_femmes|floatformat:"0" }} % de femmes</span></div>
         </article>
         <article class="kpi">
             <div class="kpi-top">
                 <span class="kpi-label">Formés</span>
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg></span>
             </div>
-            <div class="kpi-value">{{ total_formes }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">Abandons : {{ taux_abandon|floatformat:"0" }} %</span><span class="badge{% if not taux_formes %} badge-neutral{% endif %}">{{ taux_formes|floatformat:"0" }} %</span></div>
+            <div class="kpi-value" data-compte="{{ total_formes }}">{{ total_formes }}</div>
+            <div class="kpi-bottom"><span class="kpi-sub">Abandons : {{ taux_abandon|floatformat:"0" }} %</span><span class="badge{% if not taux_formes %} badge-neutral{% endif %}" data-compte="{{ taux_formes|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_formes|floatformat:"0" }} %</span></div>
         </article>
         <article class="kpi">
             <div class="kpi-top">
                 <span class="kpi-label">Certifiés</span>
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></span>
             </div>
-            <div class="kpi-value">{{ total_certifies }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">Taux de certification</span><span class="badge{% if not taux_certifies %} badge-neutral{% endif %}">{{ taux_certifies|floatformat:"0" }} %</span></div>
+            <div class="kpi-value" data-compte="{{ total_certifies }}">{{ total_certifies }}</div>
+            <div class="kpi-bottom"><span class="kpi-sub">Taux de certification</span><span class="badge{% if not taux_certifies %} badge-neutral{% endif %}" data-compte="{{ taux_certifies|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_certifies|floatformat:"0" }} %</span></div>
         </article>
         <article class="kpi">
             <div class="kpi-top">
                 <span class="kpi-label">Insérés</span>
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
             </div>
-            <div class="kpi-value">{{ total_inseres }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">{% if delai_moyen_insertion is not None %}Délai moyen : {{ delai_moyen_insertion|floatformat:"1" }} mois{% else %}Délai moyen : &mdash;{% endif %}</span><span class="badge{% if not taux_inseres %} badge-neutral{% endif %}">{{ taux_inseres|floatformat:"0" }} %</span></div>
+            <div class="kpi-value" data-compte="{{ total_inseres }}">{{ total_inseres }}</div>
+            <div class="kpi-bottom"><span class="kpi-sub">{% if delai_moyen_insertion is not None %}Délai moyen : {{ delai_moyen_insertion|floatformat:"1" }} mois{% else %}Délai moyen : &mdash;{% endif %}</span><span class="badge{% if not taux_inseres %} badge-neutral{% endif %}" data-compte="{{ taux_inseres|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_inseres|floatformat:"0" }} %</span></div>
         </article>
         <article class="kpi">
             <div class="kpi-top">
                 <span class="kpi-label">Suivis</span>
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
             </div>
-            <div class="kpi-value">{{ total_suivis }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">Bénéficiaires joints</span><span class="badge{% if not taux_suivi %} badge-neutral{% endif %}">{{ taux_suivi|floatformat:"0" }} %</span></div>
+            <div class="kpi-value" data-compte="{{ total_suivis }}">{{ total_suivis }}</div>
+            <div class="kpi-bottom"><span class="kpi-sub">Bénéficiaires joints</span><span class="badge{% if not taux_suivi %} badge-neutral{% endif %}" data-compte="{{ taux_suivi|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_suivi|floatformat:"0" }} %</span></div>
         </article>
     </section>
 
@@ -91,8 +91,8 @@
                 {% for etape in tunnel %}
                 <div class="step">
                     <span class="step-label">{{ etape.libelle }}</span>
-                    <span class="step-value">{{ etape.valeur }}</span>
-                    <span class="step-conv">{% if etape.conversion is not None %}<span class="badge {% if etape.conversion < 50 %}badge-warning{% endif %}" title="{{ etape.conversion|floatformat:'0' }} % des personnes de l'étape précédente">&darr; {{ etape.conversion|floatformat:"0" }} %</span>{% else %}<span class="badge badge-neutre">100 %</span>{% endif %}</span>
+                    <span class="step-value" data-compte="{{ etape.valeur }}">{{ etape.valeur }}</span>
+                    <span class="step-conv">{% if etape.conversion is not None %}<span class="badge {% if etape.conversion < 50 %}badge-warning{% endif %}" title="{{ etape.conversion|floatformat:'0' }} % des personnes de l'étape précédente">&darr; <span data-compte="{{ etape.conversion|stringformat:'.1f' }}" data-suffixe=" %">{{ etape.conversion|floatformat:"0" }} %</span></span>{% else %}<span class="badge badge-neutre">100 %</span>{% endif %}</span>
                     <div class="step-zone"><div class="step-bar" style="--h: {{ etape.hauteur|stringformat:'d' }}"></div></div>
                 </div>
                 {% endfor %}
@@ -124,21 +124,21 @@
                 <div class="gauge">
                     <svg viewBox="0 0 200 112" aria-hidden="true">
                         <path d="M14 100 A86 86 0 0 1 186 100" fill="none" stroke="#FFEEDD" stroke-width="16" stroke-linecap="round" pathLength="100"/>
-                        <path d="M14 100 A86 86 0 0 1 186 100" fill="none" stroke="url(#jauge-degrade)" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="{{ satisfaction_pct|stringformat:'.1f' }} 100"/>
+                        <path class="gauge-valeur" d="M14 100 A86 86 0 0 1 186 100" fill="none" stroke="url(#jauge-degrade)" stroke-width="16" stroke-linecap="round" pathLength="100" style="--pct: {{ satisfaction_pct|stringformat:'.1f' }}"/>
                         <defs><linearGradient id="jauge-degrade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFB673"/><stop offset="1" stop-color="#FF7A00"/></linearGradient></defs>
                     </svg>
-                    <div class="gauge-centre"><strong>{{ satisfaction_globale|floatformat:"1" }}</strong><span>/ 5</span><small>{{ satisfaction_pct|floatformat:"0" }} % de satisfaits</small></div>
+                    <div class="gauge-centre"><strong data-compte="{{ satisfaction_globale|stringformat:'.1f' }}" data-decimales="1">{{ satisfaction_globale|floatformat:"1" }}</strong><span>/ 5</span><small data-compte="{{ satisfaction_pct|stringformat:'.1f' }}" data-suffixe=" % de satisfaits">{{ satisfaction_pct|floatformat:"0" }} % de satisfaits</small></div>
                 </div>
                 <div class="duo">
-                    <div><span>Répondants</span><strong>{{ nb_repondants }}</strong></div>
-                    <div><span>Taux de réponse</span><strong>{{ taux_reponse|floatformat:"0" }} %</strong></div>
+                    <div><span>Répondants</span><strong data-compte="{{ nb_repondants }}">{{ nb_repondants }}</strong></div>
+                    <div><span>Taux de réponse</span><strong data-compte="{{ taux_reponse|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_reponse|floatformat:"0" }} %</strong></div>
                 </div>
                 <ul class="notes">
                     {% for d in dimensions %}
-                    <li>
+                    <li style="--i: {{ forloop.counter0 }}">
                         <span>{{ d.libelle }}</span>
                         <div class="piste"><i style="--p: {{ d.pct }}"></i></div>
-                        <b>{{ d.valeur|floatformat:"1" }}</b>
+                        <b data-compte="{{ d.valeur|stringformat:'.1f' }}" data-decimales="1">{{ d.valeur|floatformat:"1" }}</b>
                     </li>
                     {% endfor %}
                 </ul>
@@ -160,8 +160,8 @@
                 {% if regions %}
                 <ul class="barres">
                     {% for r in regions %}
-                    <li>
-                        <div class="ligne"><span>{{ r.libelle }}</span><b>{{ r.valeur }}</b></div>
+                    <li style="--i: {{ forloop.counter0 }}">
+                        <div class="ligne"><span>{{ r.libelle }}</span><b data-compte="{{ r.valeur }}">{{ r.valeur }}</b></div>
                         <div class="piste"><i style="--p: {{ r.pct|stringformat:'.1f' }}"></i></div>
                     </li>
                     {% endfor %}
@@ -176,11 +176,11 @@
                 {% if institutions_liste %}
                 <div class="donut">
                     <canvas id="graphique-institutions" aria-label="Répartition des bénéficiaires par institution" role="img"></canvas>
-                    <div class="donut-centre"><small>Total</small><strong>{{ total_beneficiaires }}</strong></div>
+                    <div class="donut-centre"><small>Total</small><strong data-compte="{{ total_beneficiaires }}">{{ total_beneficiaires }}</strong></div>
                 </div>
                 <ul class="legende-liste palette">
                     {% for i in institutions_liste %}
-                    <li><i></i><span>{{ i.libelle }}</span><b>{{ i.pct|floatformat:"0" }} %</b></li>
+                    <li style="--i: {{ forloop.counter0 }}"><i></i><span>{{ i.libelle }}</span><b data-compte="{{ i.pct|stringformat:'.1f' }}" data-suffixe=" %">{{ i.pct|floatformat:"0" }} %</b></li>
                     {% endfor %}
                 </ul>
                 {% else %}<div class="vide"><strong>Aucune donnée</strong></div>{% endif %}
@@ -192,12 +192,12 @@
             <div class="card-body">
                 {% if total_beneficiaires %}
                 <div class="repartition-sexe">
-                    <div class="ligne"><span>Femmes <b>{{ sexe.pct_femmes|floatformat:"0" }} %</b></span><span>Hommes <b>{{ sexe.pct_hommes|floatformat:"0" }} %</b></span></div>
+                    <div class="ligne"><span>Femmes <b data-compte="{{ sexe.pct_femmes|stringformat:'.1f' }}" data-suffixe=" %">{{ sexe.pct_femmes|floatformat:"0" }} %</b></span><span>Hommes <b data-compte="{{ sexe.pct_hommes|stringformat:'.1f' }}" data-suffixe=" %">{{ sexe.pct_hommes|floatformat:"0" }} %</b></span></div>
                     <div class="scinde"><i class="f" style="--f: {{ sexe.femmes }}"></i><i class="h" style="--h: {{ sexe.hommes }}"></i></div>
                 </div>
                 <div class="ages">
                     {% for a in ages %}
-                    <div class="age"><b>{{ a.valeur }}</b><div class="age-zone"><div class="age-bar" style="--h: {{ a.hauteur|stringformat:'d' }}"></div></div><span>{{ a.libelle }}</span></div>
+                    <div class="age" style="--i: {{ forloop.counter0 }}"><b data-compte="{{ a.valeur }}">{{ a.valeur }}</b><div class="age-zone"><div class="age-bar" style="--h: {{ a.hauteur|stringformat:'d' }}"></div></div><span>{{ a.libelle }}</span></div>
                     {% endfor %}
                 </div>
                 {% else %}<div class="vide"><strong>Aucune donnée</strong></div>{% endif %}
@@ -210,8 +210,8 @@
                 {% if domaines %}
                 <ul class="barres">
                     {% for d in domaines %}
-                    <li>
-                        <div class="ligne"><span>{{ d.libelle }}</span><b>{{ d.valeur }}</b></div>
+                    <li style="--i: {{ forloop.counter0 }}">
+                        <div class="ligne"><span>{{ d.libelle }}</span><b data-compte="{{ d.valeur }}">{{ d.valeur }}</b></div>
                         <div class="piste"><i style="--p: {{ d.pct|stringformat:'.1f' }}"></i></div>
                     </li>
                     {% endfor %}
@@ -225,11 +225,11 @@
             <div class="card-body">
                 {% if situations %}
                 <div class="segments palette">
-                    {% for s in situations %}<i style="--v: {{ s.valeur }}" title="{{ s.libelle }} : {{ s.valeur }}"></i>{% endfor %}
+                    {% for s in situations %}<i style="--v: {{ s.valeur }}; --i: {{ forloop.counter0 }}" title="{{ s.libelle }} : {{ s.valeur }}"></i>{% endfor %}
                 </div>
                 <ul class="legende-liste etale palette">
                     {% for s in situations %}
-                    <li><i></i><span>{{ s.libelle }}</span><b>{{ s.pct|floatformat:"0" }} %</b></li>
+                    <li style="--i: {{ forloop.counter0 }}"><i></i><span>{{ s.libelle }}</span><b data-compte="{{ s.pct|stringformat:'.1f' }}" data-suffixe=" %">{{ s.pct|floatformat:"0" }} %</b></li>
                     {% endfor %}
                 </ul>
                 {% else %}
@@ -243,21 +243,21 @@
             <div class="card-head"><div><h2 class="card-title">Qualité des données</h2><p class="card-sub">Fiabilité du suivi</p></div></div>
             <div class="card-body">
                 <div class="meter">
-                    <div class="meter-top"><span>Bénéficiaires joignables</span><b>{{ taux_completude|floatformat:"0" }} %</b></div>
+                    <div class="meter-top"><span>Bénéficiaires joignables</span><b data-compte="{{ taux_completude|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_completude|floatformat:"0" }} %</b></div>
                     <div class="meter-track"><div class="meter-fill" style="width: {{ taux_completude|stringformat:'.1f' }}%"></div></div>
                 </div>
                 <div class="meter">
-                    <div class="meter-top"><span>Bénéficiaires suivis</span><b>{{ taux_suivi|floatformat:"0" }} %</b></div>
+                    <div class="meter-top"><span>Bénéficiaires suivis</span><b data-compte="{{ taux_suivi|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_suivi|floatformat:"0" }} %</b></div>
                     <div class="meter-track"><div class="meter-fill" style="width: {{ taux_suivi|stringformat:'.1f' }}%"></div></div>
                 </div>
                 <div class="meter">
-                    <div class="meter-top"><span>Kobo validées</span><b>{{ taux_validation_kobo|floatformat:"0" }} %</b></div>
+                    <div class="meter-top"><span>Kobo validées</span><b data-compte="{{ taux_validation_kobo|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_validation_kobo|floatformat:"0" }} %</b></div>
                     <div class="meter-track"><div class="meter-fill" style="width: {{ taux_validation_kobo|stringformat:'.1f' }}%"></div></div>
                 </div>
                 <div class="mini-stats">
-                    <div><strong>{{ nb_doublons_potentiels }}</strong><span>Doublons</span></div>
-                    <div><strong>{{ nb_anomalies }}</strong><span>Anomalies</span></div>
-                    <a href="{% url 'imports:liste' %}" title="Ouvrir les soumissions Kobo"><strong>{{ nb_soumissions_kobo }}</strong><span>Kobo reçues</span></a>
+                    <div style="--i: 0"><strong data-compte="{{ nb_doublons_potentiels }}">{{ nb_doublons_potentiels }}</strong><span>Doublons</span></div>
+                    <div style="--i: 1"><strong data-compte="{{ nb_anomalies }}">{{ nb_anomalies }}</strong><span>Anomalies</span></div>
+                    <a href="{% url 'imports:liste' %}" title="Ouvrir les soumissions Kobo" style="--i: 2"><strong data-compte="{{ nb_soumissions_kobo }}">{{ nb_soumissions_kobo }}</strong><span>Kobo reçues</span></a>
                 </div>
             </div>
         </article>
@@ -275,6 +275,7 @@
     var marque = couleur("--brand"), pale = "#F2A15E", encre = couleur("--ink"), muet = couleur("--ink-muted");
     var palette = ["#FF7A00", "#FFA24D", "#FFC891", "#F4D9BF", "#D9C4AE"];
     var estVide = function (valeurs) { return valeurs.every(function (v) { return v === null || v === 0; }); };
+    var reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (typeof Chart === "undefined") { return; }
     Chart.defaults.font.family = "Inter, sans-serif";
@@ -310,6 +311,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: "index", intersect: false },
+                animation: reduit ? false : { duration: 1000, easing: "easeOutQuint", delay: 350 },
                 scales: {
                     y: { min: 0, max: 100, ticks: { stepSize: 25, callback: function (v) { return v + " %"; }, font: { size: 11 } },
                          grid: { color: "#F3EBDF", drawBorder: false }, border: { display: false } },
@@ -330,8 +332,9 @@
         new Chart(canvasInst, {
             type: "doughnut",
             data: { labels: donnees.institution.labels,
-                    datasets: [{ data: donnees.institution.values, backgroundColor: palette, borderColor: "#fff", borderWidth: 3, hoverOffset: 4 }] },
+                    datasets: [{ data: donnees.institution.values, backgroundColor: palette, borderColor: "#fff", borderWidth: 3, hoverOffset: 6 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: "68%",
+                       animation: reduit ? false : { duration: 900, easing: "easeOutQuint", animateRotate: true, animateScale: true, delay: 300 },
                        plugins: { legend: { display: false }, tooltip: { backgroundColor: encre, padding: 10, cornerRadius: 10 } } }
         });
     }

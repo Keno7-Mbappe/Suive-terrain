@@ -12,11 +12,14 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
-{% if user.is_authenticated %}
+{# Même coque (menu latéral + barre mobile) pour la vue interne et la vue publique : seul son #}
+{# contenu change selon la connexion, pour qu'elles se ressemblent vraiment. La connexion s'y #}
+{# ajoute aussi (classe .page-connexion, cf. dashboard.css) mais masque le menu : rien à y naviguer. #}
 <div class="app">
-    {% with section=request.resolver_match.app_name %}
     <div class="voile" data-menu-fermer></div>
     <aside class="sidebar" id="menu-lateral" aria-label="Menu">
+        {% if user.is_authenticated %}
+        {% with section=request.resolver_match.app_name %}
         <a href="{% url 'dashboard:index' %}" class="brand" title="PDCED – Skills">
             <span class="brand-mark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg>
@@ -84,39 +87,49 @@
                 </form>
             </div>
         </div>
-    </aside>
-    {% endwith %}
-{% else %}
-    {% block publicbar %}
-    <header class="publicbar">
-        <a href="{% url 'dashboard:public' %}" class="brand">
+        {% endwith %}
+        {% else %}
+        {# Visiteur non connecté : même habillage que l'espace institutions, navigation réduite. #}
+        <a href="{% url 'dashboard:public' %}" class="brand" title="PDCED – Skills">
             <span class="brand-mark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg>
             </span>
             <span class="brand-name">PDCED Skills<small>Suivi des bénéficiaires de formation</small></span>
         </a>
-        <a href="{% url 'login' %}" class="primary-button">Espace institutions</a>
-    </header>
-    {% endblock %}
-{% endif %}
+        <nav class="nav-list" aria-label="Navigation principale">
+            <a href="{% url 'dashboard:public' %}" title="Résultats publics" class="nav-link active">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                <span>Résultats publics</span>
+            </a>
+        </nav>
+        <div class="sidebar-bas">
+            <a href="{% url 'login' %}" class="nav-link nav-link-cta">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                <span>Espace institutions</span>
+            </a>
+        </div>
+        {% endif %}
+    </aside>
     <div class="app-main">
-        {% if user.is_authenticated %}
         <header class="mobilebar">
             <button type="button" class="mobilebar-menu" id="menu-bouton" aria-controls="menu-lateral" aria-expanded="false" aria-label="Ouvrir le menu">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
             </button>
-            <a href="{% url 'dashboard:index' %}" class="mobilebar-brand">
+            <a href="{% if user.is_authenticated %}{% url 'dashboard:index' %}{% else %}{% url 'dashboard:public' %}{% endif %}" class="mobilebar-brand">
                 <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 20v-6M12 20V9M18 20V4"/></svg></span>
                 <strong>PDCED Skills</strong>
             </a>
-            {% if nav_soumissions_a_traiter %}
-            <a href="{% url 'imports:liste' %}" class="mobilebar-alerte" title="Soumissions Kobo à traiter" aria-label="{{ nav_soumissions_a_traiter }} soumission(s) Kobo à traiter">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-                <b>{{ nav_soumissions_a_traiter }}</b>
-            </a>
+            {% if user.is_authenticated %}
+                {% if nav_soumissions_a_traiter %}
+                <a href="{% url 'imports:liste' %}" class="mobilebar-alerte" title="Soumissions Kobo à traiter" aria-label="{{ nav_soumissions_a_traiter }} soumission(s) Kobo à traiter">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                    <b>{{ nav_soumissions_a_traiter }}</b>
+                </a>
+                {% endif %}
+            {% else %}
+            <a href="{% url 'login' %}" class="mobilebar-connexion">Connexion</a>
             {% endif %}
         </header>
-        {% endif %}
         <main class="page">
             {% if messages %}
             <ul class="messages">
@@ -128,9 +141,7 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-{% if user.is_authenticated %}
 </div>
-{% endif %}
 <script>
 (function () {
     // Menu latéral en tiroir sur téléphone et tablette.
@@ -154,7 +165,8 @@
     // afficher en fiches sur téléphone (sans JavaScript, ils défilent horizontalement).
     Array.prototype.forEach.call(document.querySelectorAll("table.data-table"), function (table) {
         var titres = Array.prototype.map.call(table.querySelectorAll("thead th"), function (th) { return th.textContent.trim(); });
-        Array.prototype.forEach.call(table.querySelectorAll("tbody tr"), function (ligne) {
+        Array.prototype.forEach.call(table.querySelectorAll("tbody tr"), function (ligne, i) {
+            ligne.style.setProperty("--i", i);
             var col = 0;
             Array.prototype.forEach.call(ligne.children, function (cellule) {
                 if (cellule.colSpan > 1) { col += cellule.colSpan; return; }
@@ -170,6 +182,30 @@
         });
         table.classList.add("table-cartes");
     });
+
+    // Chiffres qui comptent jusqu'à leur valeur finale à l'affichage (indicateurs, jauge,
+    // étapes du parcours...). Ignoré si le visiteur préfère moins d'animations.
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        Array.prototype.forEach.call(document.querySelectorAll("[data-compte]"), function (el) {
+            var fin = parseFloat(el.getAttribute("data-compte"));
+            if (isNaN(fin)) { return; }
+            var decimales = parseInt(el.getAttribute("data-decimales") || "0", 10);
+            var suffixe = el.getAttribute("data-suffixe") || "";
+            var depart = null, duree = 900;
+            function formater(v) {
+                var s = decimales ? v.toFixed(decimales).replace(".", ",") : String(Math.round(v));
+                return s + suffixe;
+            }
+            function etape(t) {
+                if (depart === null) { depart = t; }
+                var p = Math.min(1, (t - depart) / duree);
+                var ease = 1 - Math.pow(1 - p, 3);
+                el.textContent = formater(fin * ease);
+                if (p < 1) { requestAnimationFrame(etape); } else { el.textContent = formater(fin); }
+            }
+            requestAnimationFrame(etape);
+        });
+    }
 })();
 </script>
 </body>

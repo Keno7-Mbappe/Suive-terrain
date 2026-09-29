@@ -105,16 +105,33 @@ class DashboardViewsTests(TestCase):
         for url in (reverse("dashboard:public"), reverse("login")):
             self.assertContains(self.client.get(url), 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"')
 
-    def test_menu_mobile_reserve_aux_utilisateurs_connectes(self):
+    def test_menu_mobile_present_partout_mais_navigation_adaptee_au_role(self):
+        # Le même habillage (menu en tiroir sur téléphone) sert la vue publique et la
+        # vue interne, pour qu'elles se ressemblent — seul le contenu du menu change.
         self.client.force_login(self.admin)
         interne = self.client.get(reverse("dashboard:index"))
         self.assertContains(interne, 'id="menu-bouton"')
         self.assertContains(interne, 'aria-controls="menu-lateral"')
         self.assertContains(interne, 'id="menu-lateral"')
+        self.assertContains(interne, "Bénéficiaires")
         self.client.logout()
         publique = self.client.get(reverse("dashboard:public"))
-        self.assertNotContains(publique, 'id="menu-bouton"')
+        self.assertContains(publique, 'id="menu-bouton"')
+        self.assertContains(publique, 'id="menu-lateral"')
         self.assertContains(publique, "Espace institutions")
+        # "Bénéficiaires" reste un intitulé d'indicateur légitime sur le tableau de bord
+        # public (nombre de bénéficiaires) : ce qui distingue la navigation, c'est le lien
+        # vers la liste nominative, réservé à l'espace connecté.
+        self.assertNotContains(publique, 'href="/beneficiaires/"')
+        self.assertContains(interne, 'href="/beneficiaires/"')
+
+    def test_page_de_connexion_sans_coque_applicative(self):
+        # La connexion reste un simple écran centré : le menu existe dans le HTML (même
+        # coque que le reste de l'application) mais la classe .page-connexion le masque
+        # entièrement en CSS, puisqu'il n'y a rien à y naviguer avant de s'authentifier.
+        response = self.client.get(reverse("login"))
+        self.assertContains(response, 'class="page-connexion"')
+        self.assertContains(response, 'class="login-wrapper"')
 
     def test_dashboard_public_n_expose_aucune_donnee_nominative(self):
         _beneficiaire(self.institution, nom="Nomtresspecifique", prenom="Prenomtresspecifique")
