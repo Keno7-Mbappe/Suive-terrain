@@ -7,8 +7,8 @@ from apps.referentiels.models import Institution
 from .models import Beneficiaire, SequenceAnnuelle
 
 
-def _institution(libelle="EFTP"):
-    return Institution.objects.create(libelle=libelle, type="eftp", region="djibouti")
+def _institution(libelle="DGFP"):
+    return Institution.objects.create(libelle=libelle, type="dgfp", region="djibouti")
 
 
 class GenerationIdentifiantTests(TestCase):

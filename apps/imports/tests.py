@@ -21,7 +21,7 @@ FICHIERS_KOBO = ["suivi_et_satisfaction.xlsx", "satisfaction_institution.xlsx"]
 
 class ExportKoboChoicesTests(TestCase):
     def setUp(self):
-        self.institution = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.institution = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         CycleEnquete.objects.create(libelle="Cycle 1", date_debut=date(2026, 11, 1), date_fin=date(2026, 11, 30))
         self.beneficiaire = Beneficiaire.objects.create(
             nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
@@ -46,14 +46,14 @@ class ExportKoboChoicesTests(TestCase):
                 self.assertEqual(lignes[0]["name"], "B-2026-0001")
                 self.assertIn("Ali", lignes[0]["label"])
                 self.assertEqual(lignes[0]["nom_prenom"], "Amina Ali")
-                self.assertEqual(lignes[0]["institution"], "EFTP")
+                self.assertEqual(lignes[0]["institution"], "DGFP")
                 self.assertEqual(lignes[0]["date_fin_formation"], "2026-06-30")
                 self.assertEqual(lignes[0]["telephone"], "77000000")
 
                 with open(dossier / "institutions.csv", encoding="utf-8") as f:
                     lignes = list(csv.DictReader(f))
                 self.assertEqual(lignes[0]["name"], str(self.institution.pk))
-                self.assertEqual(lignes[0]["label"], "EFTP")
+                self.assertEqual(lignes[0]["label"], "DGFP")
 
 
 class GenerateKoboXlsformsTests(TestCase):
@@ -93,7 +93,7 @@ class TraiterSoumissionTests(TestCase):
     et le bouton « Réessayer » de la page de contrôle."""
 
     def setUp(self):
-        institution = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        institution = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.beneficiaire = Beneficiaire.objects.create(
             nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
             region="djibouti", institution=institution,
@@ -193,7 +193,7 @@ class SoumissionActionsViewTests(TestCase):
     def setUp(self):
         self.validateur = User.objects.create_user(username="validateur_test2", password="motdepasse123")
         Profile.objects.filter(user=self.validateur).update(role="validateur")
-        institution = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        institution = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.beneficiaire = Beneficiaire.objects.create(
             nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
             region="djibouti", institution=institution,

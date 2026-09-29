@@ -10,11 +10,9 @@ REGIONS = [
 ]
 
 TYPES_INSTITUTION = [
-    ("eftp", "EFTP"),
+    ("dgfp", "DGFP"),
     ("inap", "INAP"),
     ("anefip", "ANEFIP"),
-    ("oneq", "ONEQ"),
-    ("direction_projets", "Direction des Projets (MENFOP)"),
     ("autre", "Autre"),
 ]
 

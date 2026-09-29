@@ -22,7 +22,7 @@ class InstitutionScopedQuerysetMixin:
     """CBV mixin: restrict the queryset to the requester's institution, following
     the FK path given by `institution_lookup` (e.g. "institution" or
     "beneficiaire__institution"). Users without an institution (administrateur,
-    ONEQ, Direction des Projets) see everything.
+    ou tout profil à accès multi-institutions) see everything.
     """
 
     institution_lookup = "institution"

@@ -1,8 +1,8 @@
 class InstitutionScopedBeneficiaireFormMixin:
     """ModelForm mixin: restricts the `beneficiaire` field's choices to the
     requester's institution (saisie/validateur scoped to one institution).
-    Users without an institution (administrateur, ONEQ, Direction des Projets)
-    see every beneficiaire.
+    Users without an institution (administrateur, ou tout profil à accès
+    multi-institutions) see every beneficiaire.
     """
 
     def __init__(self, *args, request=None, **kwargs):

@@ -46,7 +46,7 @@ def donnees_suivi(beneficiaire, **surcharges):
 
 class FluxDeValidationTests(TestCase):
     def setUp(self):
-        self.eftp = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.eftp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
         self.beneficiaire = Beneficiaire.objects.create(
             nom="Ali Ahmed", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
@@ -215,7 +215,7 @@ class FluxDeValidationTests(TestCase):
         CycleEnquete.objects.create(libelle="Cycle 1", date_debut=date(2026, 11, 1), date_fin=date(2026, 11, 30))
         soumission = self._soumission(
             {
-                "identification/institution": "EFTP", "identification/cycle": "cycle_1",
+                "identification/institution": "DGFP", "identification/cycle": "cycle_1",
                 "identification/fonction": "Directeur",
                 "notes/note_qualite_donnees": "4", "notes/note_outils_collecte": "4",
                 "notes/note_tableaux_bord": "5", "notes/note_appui_technique": "3",

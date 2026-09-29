@@ -18,7 +18,7 @@ rôle, cloisonnement par institution)."""
 
 class ScopingParInstitutionEtRoleTests(TestCase):
     def setUp(self):
-        self.eftp = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.eftp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
 
         self.beneficiaire_eftp = Beneficiaire.objects.create(

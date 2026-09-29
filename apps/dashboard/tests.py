@@ -25,7 +25,7 @@ def _beneficiaire(institution, **kwargs):
 
 class AnomaliesTests(TestCase):
     def setUp(self):
-        self.institution = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.institution = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
 
     def test_aucune_anomalie_sur_un_parcours_coherent(self):
         b = _beneficiaire(self.institution, date_naissance=date(2000, 1, 1), date_enregistrement=date(2026, 1, 1))
@@ -53,7 +53,7 @@ class AnomaliesTests(TestCase):
 
 class DashboardViewsTests(TestCase):
     def setUp(self):
-        self.institution = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.institution = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.admin = User.objects.create_user(username="admin_test", password="motdepasse123")
         Profile.objects.filter(user=self.admin).update(role="administrateur")
 

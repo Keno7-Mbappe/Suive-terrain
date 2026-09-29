@@ -53,8 +53,8 @@ class Satisfaction(models.Model):
 
 
 class SatisfactionInstitution(models.Model):
-    """Satisfaction des institutions partenaires (EFTP/INAP/ANEFIP/ONEQ/Direction des
-    Projets) à l'égard du DISPOSITIF DE SUIVI lui-même (qualité des données, outils
+    """Satisfaction des institutions partenaires (DGFP/INAP/ANEFIP) à l'égard du
+    DISPOSITIF DE SUIVI lui-même (qualité des données, outils
     de collecte, tableaux de bord, appui technique, coordination) - pas une simple
     reprise du questionnaire de satisfaction des bénéficiaires, qui n'aurait pas de
     sens pour une institution (elle ne suit pas la formation)."""

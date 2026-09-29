@@ -124,8 +124,8 @@ def _calculer_contexte(cycle_id, institution_id):
 
     total_suivis = Suivi.objects.filter(beneficiaire__in=beneficiaires).values("beneficiaire").distinct().count()
 
-    # Satisfaction des institutions à l'égard du dispositif de suivi lui-même
-    # (pilotage interne ONEQ / Direction des Projets, pas un résultat bénéficiaire).
+    # Satisfaction des institutions (DGFP/INAP/ANEFIP) à l'égard du dispositif de
+    # suivi lui-même (pilotage interne, pas un résultat bénéficiaire).
     reponses_institution = SatisfactionInstitution.objects.all()
     if institution_id:
         reponses_institution = reponses_institution.filter(institution_id=institution_id)

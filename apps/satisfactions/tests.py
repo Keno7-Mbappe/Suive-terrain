@@ -13,7 +13,7 @@ from .models import Satisfaction, SatisfactionInstitution
 
 class SatisfactionViewsTests(TestCase):
     def setUp(self):
-        self.eftp = Institution.objects.create(libelle="EFTP", type="eftp", region="djibouti")
+        self.eftp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
         self.cycle = CycleEnquete.objects.create(
             libelle="Cycle 1", date_debut=date(2026, 11, 1), date_fin=date(2026, 11, 30)
         )

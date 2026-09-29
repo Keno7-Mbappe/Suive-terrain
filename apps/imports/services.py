@@ -56,9 +56,9 @@ def _vers_bool_oui_non(valeur):
 
 
 def _resoudre_institution(code):
-    """Retrouve l'institution d'après le code du formulaire Kobo (INAP, EFTP, ANEFIP,
-    ONEQ, MENFOP) - ou son identifiant numérique, pour les formulaires qui exportent
-    la liste des institutions depuis la base. Retourne None si introuvable."""
+    """Retrouve l'institution d'après le code du formulaire Kobo (INAP, DGFP, ANEFIP)
+    - ou son identifiant numérique, pour les formulaires qui exportent la liste des
+    institutions depuis la base. Retourne None si introuvable."""
     code = str(code or "").strip()
     if not code:
         return None

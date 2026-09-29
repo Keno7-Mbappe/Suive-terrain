@@ -21,7 +21,7 @@ class Profile(models.Model):
         blank=True,
         related_name="utilisateurs",
         verbose_name="Institution de rattachement",
-        help_text="Institution de rattachement. Laisser vide pour un accès multi-institutions (administrateur, ONEQ, Direction des Projets).",
+        help_text="Institution de rattachement. Laisser vide pour un accès multi-institutions (administrateur notamment).",
     )
 
     class Meta:

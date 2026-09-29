@@ -42,14 +42,12 @@ ECHELLE_5 = [
 ]
 INSTITUTIONS = [
     ("INAP", "INAP"),
-    ("EFTP", "EFTP"),
+    ("DGFP", "DGFP"),
     ("ANEFIP", "ANEFIP"),
-    ("ONEQ", "ONEQ"),
-    ("MENFOP", "Direction des Projets – MENFOP"),
 ]
 # Codes d'institution des formulaires Kobo -> valeur du champ `type` de Institution.
 TYPE_INSTITUTION_PAR_CODE = {
-    "INAP": "inap", "EFTP": "eftp", "ANEFIP": "anefip", "ONEQ": "oneq", "MENFOP": "direction_projets",
+    "INAP": "inap", "DGFP": "dgfp", "ANEFIP": "anefip",
 }
 
 SECTIONS = {

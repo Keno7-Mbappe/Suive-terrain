@@ -24,8 +24,8 @@ def role_required(*roles):
 
 
 def scope_queryset_to_institution(request, queryset, institution_field="institution"):
-    """Restrict a queryset to the requester's institution unless they are
-    administrateur/ONEQ/Direction des Projets (profile.institution is None = accès global).
+    """Restrict a queryset to the requester's institution unless they have
+    multi-institution access (profile.institution is None = accès global).
     """
     profile = getattr(request.user, "profile", None)
     if profile is None or profile.institution_id is None:

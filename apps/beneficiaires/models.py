@@ -97,7 +97,7 @@ class Beneficiaire(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        # Les imports (Kobo, Excel EFTP/INAP/ANEFIP) fournissent souvent des dates sous
+        # Les imports (Kobo, Excel DGFP/INAP/ANEFIP) fournissent souvent des dates sous
         # forme de chaînes ISO plutôt que d'objets `date` : on les normalise ici plutôt
         # que de supposer qu'elles passent toujours par un ModelForm.
         if isinstance(self.date_naissance, str):

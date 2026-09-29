@@ -5,11 +5,9 @@ from django.core.management.base import BaseCommand
 from apps.referentiels.models import CycleEnquete, Institution
 
 INSTITUTIONS = [
-    ("EFTP", "eftp", "djibouti"),
+    ("DGFP", "dgfp", "djibouti"),
     ("INAP", "inap", "djibouti"),
     ("ANEFIP", "anefip", "djibouti"),
-    ("ONEQ", "oneq", "djibouti"),
-    ("Direction des Projets (MENFOP)", "direction_projets", "djibouti"),
 ]
 
 CYCLES = [

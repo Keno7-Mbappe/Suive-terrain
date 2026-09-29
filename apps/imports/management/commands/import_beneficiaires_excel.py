@@ -14,7 +14,7 @@ aux deux feuilles).
 Colonnes attendues :
 - Feuille "beneficiaires" : id_beneficiaire, nom_complet, sexe (M/F),
   date_naissance (AAAA-MM-JJ), age_declare (ignoré, recalculé), quartier,
-  region, niveau_etude, telephone_1, id_institution (code : EFTP/INAP/ANEFIP),
+  region, niveau_etude, telephone_1, id_institution (code : DGFP/INAP/ANEFIP),
   statut ("formé" -> Formation.statut_formation="achevee" ; toute autre
   valeur -> "en_cours", cf. STATUT_VERS_FORMATION).
 - Feuille "formations" : id_formation (ignoré), id_beneficiaire, filiere,
