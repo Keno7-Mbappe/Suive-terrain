@@ -17,6 +17,11 @@ class BeneficiaireForm(forms.ModelForm):
 
     def __init__(self, *args, request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Le modèle accepte sexe/date de naissance non renseignés pour absorber les listes
+        # institutionnelles incomplètes importées en masse ; une saisie manuelle, elle,
+        # doit connaître la personne qu'elle enregistre.
+        self.fields["sexe"].required = True
+        self.fields["date_naissance"].required = True
         profile = getattr(request.user, "profile", None) if request else None
         if profile and profile.institution_id:
             self.fields["institution"].initial = profile.institution_id

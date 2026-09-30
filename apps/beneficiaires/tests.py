@@ -115,3 +115,75 @@ class DoublonsTests(TestCase):
         )
         doublons = Beneficiaire.trouver_doublons_potentiels("Ali", "Amina", date(2000, 1, 1))
         self.assertEqual(doublons.count(), 0)
+
+    def test_institution_isole_la_recherche_de_doublon(self):
+        # Un homonyme dans une AUTRE institution n'est presque toujours pas la même
+        # personne : le confondre lui volerait son institution (incident constaté à
+        # l'import d'une liste nominative dont un nom+date de naissance coïncidait par
+        # hasard avec un bénéficiaire déjà enregistré ailleurs).
+        anefip = _institution("ANEFIP")
+        dgfp = _institution("DGFP")
+        Beneficiaire.objects.create(
+            nom="Ahmed", prenom="Mohamed", sexe="M", date_naissance=date(1996, 11, 17),
+            region="djibouti", institution=anefip,
+        )
+        self.assertEqual(
+            Beneficiaire.trouver_doublons_potentiels("Ahmed", "Mohamed", date(1996, 11, 17), institution=dgfp).count(),
+            0,
+        )
+        self.assertEqual(
+            Beneficiaire.trouver_doublons_potentiels("Ahmed", "Mohamed", date(1996, 11, 17), institution=anefip).count(),
+            1,
+        )
+
+    def test_jamais_de_doublon_sans_date_de_naissance_connue(self):
+        # Deux homonymes sans date de naissance ne peuvent pas être comparés de façon
+        # fiable : sans institution donnée, on ne doit jamais les traiter comme le même
+        # bénéficiaire, ni comme des doublons potentiels (indicateur qualité).
+        institution = _institution()
+        Beneficiaire.objects.create(
+            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=None, region="djibouti", institution=institution,
+        )
+        Beneficiaire.objects.create(
+            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=None, region="djibouti", institution=institution,
+        )
+        self.assertEqual(Beneficiaire.trouver_doublons_potentiels("Robleh", "Idriss", None).count(), 0)
+        self.assertEqual(Beneficiaire.groupes_doublons().count(), 0)
+
+    def test_correspondance_sans_date_de_naissance_possible_dans_la_meme_institution(self):
+        # Nécessaire pour qu'un ré-import du même fichier (reprise après coupure réseau,
+        # par exemple) mette à jour ce bénéficiaire plutôt que de le dupliquer, même sans
+        # date de naissance connue - à condition de rester dans la même institution.
+        anefip = _institution("ANEFIP")
+        dgfp = _institution("DGFP")
+        sans_date = Beneficiaire.objects.create(
+            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=None, region="djibouti", institution=dgfp,
+        )
+        avec_date = Beneficiaire.objects.create(
+            nom="Farah", prenom="Amina", sexe="F", date_naissance=date(1998, 5, 4), region="djibouti", institution=dgfp,
+        )
+        self.assertEqual(
+            list(Beneficiaire.trouver_doublons_potentiels("Robleh", "Idriss", None, institution=dgfp)), [sans_date]
+        )
+        self.assertEqual(
+            Beneficiaire.trouver_doublons_potentiels("Robleh", "Idriss", None, institution=anefip).count(), 0
+        )
+        # Un homonyme dont la date de naissance est déjà connue n'est jamais réutilisé
+        # pour une ligne sans date : on ne doit pas écraser une information déjà acquise.
+        self.assertEqual(
+            Beneficiaire.trouver_doublons_potentiels("Farah", "Amina", None, institution=dgfp).count(), 0
+        )
+
+
+class DonneesManquantesTests(TestCase):
+    """Certaines listes nominatives institutionnelles n'indiquent pas toujours le sexe
+    ou la date de naissance de chaque personne : le bénéficiaire doit tout de même
+    pouvoir être enregistré, avec ces informations marquées "non renseigné"."""
+
+    def test_beneficiaire_sans_date_de_naissance_ni_sexe(self):
+        b = Beneficiaire.objects.create(
+            nom="Elmi", prenom="Mahdi", sexe="", date_naissance=None,
+            region="obock", institution=_institution(),
+        )
+        self.assertEqual(b.tranche_age, "")
+        self.assertIsNone(b.date_naissance)

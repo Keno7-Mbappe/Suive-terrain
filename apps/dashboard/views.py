@@ -55,6 +55,8 @@ def _compter_anomalies(beneficiaires):
     parcours daté avant même le début de la formation qui l'a permis."""
     nb = 0
     for b in beneficiaires.only("id_beneficiaire", "date_naissance", "date_enregistrement"):
+        if b.date_naissance is None:
+            continue  # âge incalculable sans date de naissance connue
         age = b.date_enregistrement.year - b.date_naissance.year
         if (b.date_enregistrement.month, b.date_enregistrement.day) < (b.date_naissance.month, b.date_naissance.day):
             age -= 1

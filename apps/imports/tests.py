@@ -2,9 +2,12 @@ import csv
 from datetime import date
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
+import openpyxl
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.db import OperationalError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -224,3 +227,120 @@ class SoumissionActionsViewTests(TestCase):
         self.assertRedirects(response, reverse("imports:liste"))
         soumission.refresh_from_db()
         self.assertEqual(soumission.statut, "doublon")
+
+
+def _classeur_liste_nominative(tmp_path, lignes_beneficiaires, lignes_formations):
+    """Construit un fichier au format "PDCED-Skills_<INSTITUTION>-liste-nominative.xlsx"
+    (mêmes colonnes, mêmes dates en texte que les vraies listes institutionnelles)."""
+    classeur = openpyxl.Workbook()
+    feuille_b = classeur.active
+    feuille_b.title = "beneficiaires"
+    feuille_b.append([
+        "id_beneficiaire", "nom_complet", "sexe", "date_naissance", "age_declare",
+        "quartier", "region", "niveau_etude", "telephone_1", "id_institution", "statut",
+    ])
+    for ligne in lignes_beneficiaires:
+        feuille_b.append(ligne)
+    feuille_f = classeur.create_sheet("formations")
+    feuille_f.append(["id_formation", "id_beneficiaire", "filiere", "centre", "date_debut", "date_fin"])
+    for ligne in lignes_formations:
+        feuille_f.append(ligne)
+    chemin = tmp_path / "liste.xlsx"
+    classeur.save(chemin)
+    return str(chemin)
+
+
+class ImportBeneficiairesExcelTests(TestCase):
+    """Cette commande a causé un incident réel : l'import de la liste DGFP a réassigné
+    un bénéficiaire ANEFIP à cause d'un homonyme (même nom, même date de naissance,
+    aucune date de naissance dans d'autres cas). Ces tests couvrent précisément ce qui
+    a été corrigé pour que ça ne se reproduise pas."""
+
+    def setUp(self):
+        self.anefip = Institution.objects.create(libelle="ANEFIP", type="anefip", region="djibouti")
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+
+    def test_import_cree_les_beneficiaires_et_formations(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI ROBLEH", "F", "1999-03-01", 27, "Balbala", "Djibouti", "BAC", 77000000, "ANEFIP", "formé")],
+                [("F-0001", "X-0001", "Informatique", "Centre A", "2026-01-10", "2026-06-10")],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        b = Beneficiaire.objects.get(institution=self.anefip)
+        self.assertEqual((b.nom, b.prenom), ("ALI ROBLEH", "AMINA"))
+        self.assertEqual(b.sexe, "F")
+        formation = Formation.objects.get(beneficiaire=b)
+        self.assertEqual(formation.statut_formation, "achevee")
+
+    def test_champs_manquants_ne_font_pas_planter_limport(self):
+        # Régression : une liste nominative réelle contenait des formations sans filière
+        # (colonne "filiere" vide, un centre donné) - Formation.domaine ne peut alors plus
+        # être obligatoire, sous peine de faire planter tout l'import en cours de route.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "IDRISS ROBLEH", None, None, None, None, "Djibouti", None, None, "DGFP", "en cours")],
+                [("F-0001", "X-0001", None, "Centre B", None, None)],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        b = Beneficiaire.objects.get(institution=self.dgfp)
+        self.assertEqual(b.sexe, "")
+        self.assertIsNone(b.date_naissance)
+        formation = Formation.objects.get(beneficiaire=b)
+        self.assertIsNone(formation.date_debut)
+        self.assertEqual(formation.domaine, "")
+
+    def test_un_homonyme_dans_une_autre_institution_nest_pas_confondu(self):
+        # Régression exacte de l'incident : un bénéficiaire ANEFIP existant ne doit
+        # jamais être réassigné à une autre institution à cause d'un homonyme (même nom,
+        # même date de naissance) rencontré dans le fichier importé.
+        Beneficiaire.objects.create(
+            nom="Ahmed", prenom="Mohamed", sexe="M", date_naissance=date(1996, 11, 17),
+            region="djibouti", institution=self.anefip,
+        )
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "MOHAMED AHMED", "M", "1996-11-17", 30, None, "Djibouti", None, 77000001, "DGFP", "formé")],
+                [],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        self.assertEqual(Beneficiaire.objects.filter(institution=self.anefip).count(), 1)
+        self.assertEqual(Beneficiaire.objects.filter(institution=self.dgfp).count(), 1)
+
+    def test_reprise_transparente_apres_une_coupure_reseau(self):
+        # Le pooler Supabase coupe parfois une connexion en plein import (flake réseau
+        # constaté en conditions réelles) : une seule ligne doit être rejouée, pas tout
+        # l'import - et surtout pas en le relançant depuis le début (cf. l'autre incident :
+        # ça duplique les bénéficiaires sans date de naissance connue).
+        appels = {"n": 0}
+        original_save = Beneficiaire.save
+
+        def save_qui_echoue_une_fois(self, *args, **kwargs):
+            appels["n"] += 1
+            if appels["n"] == 1:
+                raise OperationalError("server closed the connection unexpectedly")
+            return original_save(self, *args, **kwargs)
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI", "F", "1999-03-01", 27, None, "Djibouti", None, 77000000, "ANEFIP", "formé")],
+                [],
+            )
+            with mock.patch("apps.beneficiaires.models.Beneficiaire.save", save_qui_echoue_une_fois), \
+                 mock.patch("apps.imports.management.commands.import_beneficiaires_excel.time.sleep"), \
+                 mock.patch("apps.imports.management.commands.import_beneficiaires_excel.connection.close"):
+                # connection.close() n'est pas exercé pour de vrai : les TestCase de Django
+                # isolent chaque test dans une transaction non validée, et fermer la vraie
+                # connexion casserait ce mécanisme pour les tests suivants - seule la
+                # logique de reprise (rejouer la ligne) nous intéresse ici.
+                call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        self.assertEqual(Beneficiaire.objects.filter(institution=self.anefip).count(), 1)
+        self.assertEqual(appels["n"], 2)

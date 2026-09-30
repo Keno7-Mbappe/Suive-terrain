@@ -50,6 +50,14 @@ class AnomaliesTests(TestCase):
         _beneficiaire(self.institution, date_naissance=date(2020, 1, 1), date_enregistrement=date(2026, 1, 1))  # 6 ans
         self.assertEqual(_compter_anomalies(Beneficiaire.objects.all()), 1)
 
+    def test_date_de_naissance_inconnue_ne_compte_pas_comme_anomalie(self):
+        # Certaines listes nominatives institutionnelles n'indiquent pas la date de
+        # naissance : l'âge est alors incalculable, ça ne doit pas planter ni compter
+        # comme une anomalie (on ne sait juste pas).
+        b = _beneficiaire(self.institution, date_naissance=None)
+        Formation.objects.create(beneficiaire=b, domaine="Informatique", date_debut=None)
+        self.assertEqual(_compter_anomalies(Beneficiaire.objects.all()), 0)
+
 
 class DashboardViewsTests(TestCase):
     def setUp(self):
