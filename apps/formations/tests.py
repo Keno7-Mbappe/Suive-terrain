@@ -44,3 +44,49 @@ class FormationScopingTests(TestCase):
 
         liste = self.client.get(reverse("formations:liste"))
         self.assertEqual(len(liste.context["formations"]), 1)
+
+
+class FormationListViewFiltresTests(TestCase):
+    """Barre de recherche et filtres par colonne de la liste des formations."""
+
+    def setUp(self):
+        self.eftp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.beneficiaire_eftp = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.eftp,
+        )
+        self.beneficiaire_inap = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        Formation.objects.create(
+            beneficiaire=self.beneficiaire_eftp, domaine="Informatique", centre="Centre A",
+            statut_formation="en_cours",
+        )
+        Formation.objects.create(
+            beneficiaire=self.beneficiaire_inap, domaine="Couture", centre="Centre B",
+            statut_formation="achevee",
+        )
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_du_beneficiaire(self):
+        reponse = self.client.get(reverse("formations:liste"), {"q": "amina"})
+        self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Informatique"])
+
+    def test_recherche_par_domaine(self):
+        reponse = self.client.get(reverse("formations:liste"), {"q": "couture"})
+        self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Couture"])
+
+    def test_filtre_par_statut(self):
+        reponse = self.client.get(reverse("formations:liste"), {"statut": "achevee"})
+        self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Couture"])
+
+    def test_filtre_par_centre(self):
+        reponse = self.client.get(reverse("formations:liste"), {"centre": "Centre A"})
+        self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Informatique"])
+
+    def test_filtre_par_institution(self):
+        reponse = self.client.get(reverse("formations:liste"), {"institution": self.inap.pk})
+        self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Couture"])

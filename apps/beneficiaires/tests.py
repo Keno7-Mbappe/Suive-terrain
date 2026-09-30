@@ -1,6 +1,8 @@
 from datetime import date
 
+from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 
 from apps.referentiels.models import Institution
 
@@ -187,3 +189,42 @@ class DonneesManquantesTests(TestCase):
         )
         self.assertEqual(b.tranche_age, "")
         self.assertIsNone(b.date_naissance)
+
+
+class BeneficiaireListViewFiltresTests(TestCase):
+    """Barre de recherche et filtres par colonne de la liste des bénéficiaires."""
+
+    def setUp(self):
+        self.dgfp = _institution("DGFP")
+        self.inap = _institution("INAP")
+        Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", niveau_etude="Licence", institution=self.dgfp,
+        )
+        Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="arta", niveau_etude="BAC", institution=self.inap, statut="abandon",
+        )
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_ou_prenom(self):
+        reponse = self.client.get(reverse("beneficiaires:liste"), {"q": "amina"})
+        self.assertEqual([b.nom for b in reponse.context["beneficiaires"]], ["Ali"])
+
+    def test_recherche_prenom_puis_nom_trouve_la_meme_personne(self):
+        # "Amina Ali" doit retrouver la personne même si l'ordre nom/prénom est inversé.
+        reponse = self.client.get(reverse("beneficiaires:liste"), {"q": "amina ali"})
+        self.assertEqual(len(reponse.context["beneficiaires"]), 1)
+
+    def test_filtre_par_statut(self):
+        reponse = self.client.get(reverse("beneficiaires:liste"), {"statut": "abandon"})
+        self.assertEqual([b.nom for b in reponse.context["beneficiaires"]], ["Omar"])
+
+    def test_filtre_par_niveau_etude(self):
+        reponse = self.client.get(reverse("beneficiaires:liste"), {"niveau_etude": "BAC"})
+        self.assertEqual([b.nom for b in reponse.context["beneficiaires"]], ["Omar"])
+
+    def test_filtre_par_institution(self):
+        reponse = self.client.get(reverse("beneficiaires:liste"), {"institution": self.inap.pk})
+        self.assertEqual([b.nom for b in reponse.context["beneficiaires"]], ["Omar"])
