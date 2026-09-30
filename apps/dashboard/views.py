@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 
 from django.contrib.auth.decorators import login_required
@@ -78,12 +79,14 @@ def _compter_anomalies(beneficiaires):
     return nb
 
 
-def _calculer_contexte(cycle_id, institution_id):
+def _calculer_contexte(cycle_id, institution_id, domaine=""):
     """Toutes les statistiques du tableau de bord. Les requêtes sont regroupées
     (agrégats conditionnels) : la base est distante, chaque aller-retour coûte cher."""
     beneficiaires = Beneficiaire.objects.all()
     if institution_id:
         beneficiaires = beneficiaires.filter(institution_id=institution_id)
+    if domaine:
+        beneficiaires = beneficiaires.filter(formations__domaine=domaine).distinct()
 
     profil = beneficiaires.aggregate(
         total=Count("id_beneficiaire"),
@@ -263,22 +266,33 @@ def _calculer_contexte(cycle_id, institution_id):
         },
         "institutions": list(Institution.objects.values("id", "libelle")),
         "cycles": [{"id": c.pk, "libelle": c.libelle} for c in cycles],
+        # Liste complète (pas seulement le top 5 affiché dans la carte "Domaines") pour le
+        # menu déroulant : avec plusieurs institutions, il y a trop de filières distinctes
+        # pour toutes tenir dans la carte elle-même (cf. demande utilisateur).
+        "domaines_disponibles": list(
+            Formation.objects.exclude(domaine="").order_by("domaine").values_list("domaine", flat=True).distinct()
+        ),
     }
 
 
 def _contexte_dashboard(request):
-    # Ces valeurs viennent de l'URL : on n'accepte que des identifiants numériques.
+    # Ces valeurs viennent de l'URL : on n'accepte que des identifiants numériques,
+    # sauf le domaine (texte libre saisi dans les listes nominatives importées).
     cycle_id = request.GET.get("cycle", "")
     institution_id = request.GET.get("institution", "")
     cycle_id = cycle_id if cycle_id.isdigit() else ""
     institution_id = institution_id if institution_id.isdigit() else ""
+    domaine = request.GET.get("domaine", "").strip()[:150]
 
-    cle_cache = f"dashboard:{cycle_id}:{institution_id}"
+    # md5 : le nom d'un domaine peut contenir des espaces ou accents, invalides dans une
+    # clé de cache memcached (LocMemCache s'en moque, mais autant rester portable).
+    cle_domaine = hashlib.md5(domaine.encode()).hexdigest()[:12] if domaine else ""
+    cle_cache = f"dashboard:{cycle_id}:{institution_id}:{cle_domaine}"
     contexte = cache.get(cle_cache)
     if contexte is None:
-        contexte = _calculer_contexte(cycle_id, institution_id)
+        contexte = _calculer_contexte(cycle_id, institution_id, domaine)
         cache.set(cle_cache, contexte, DUREE_CACHE_SECONDES)
-    return {**contexte, "filtre_cycle": cycle_id, "filtre_institution": institution_id}
+    return {**contexte, "filtre_cycle": cycle_id, "filtre_institution": institution_id, "filtre_domaine": domaine}
 
 
 @login_required

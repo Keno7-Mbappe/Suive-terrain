@@ -109,6 +109,24 @@ class DashboardViewsTests(TestCase):
         self.assertEqual(tunnel["Certifiés"]["conversion"], 100.0)
         self.assertEqual(response.context["sexe"]["femmes"], 1)
 
+    def test_filtre_par_domaine_restreint_les_beneficiaires_et_liste_tous_les_domaines(self):
+        # Avec plusieurs institutions, il y a trop de filières distinctes pour toutes
+        # tenir dans la carte "Domaines" (top 5 affiché) : le menu déroulant doit lister
+        # les 6 pour rester sélectionnable, et filtrer le tableau de bord dessus.
+        informaticien = _beneficiaire(self.institution, nom="Informaticien")
+        Formation.objects.create(beneficiaire=informaticien, domaine="Informatique", date_debut=date(2025, 1, 1))
+        for i, domaine in enumerate(["Plomberie", "Couture", "Cuisine", "Maçonnerie", "Soudure"]):
+            b = _beneficiaire(self.institution, nom=f"Autre{i}")
+            Formation.objects.create(beneficiaire=b, domaine=domaine, date_debut=date(2025, 1, 1))
+
+        reponse_normale = self.client.get(reverse("dashboard:public"))
+        self.assertEqual(len(reponse_normale.context["domaines_disponibles"]), 6)
+        self.assertEqual(reponse_normale.context["total_beneficiaires"], 6)
+
+        filtree = self.client.get(reverse("dashboard:public"), {"domaine": "Informatique"})
+        self.assertEqual(filtree.context["filtre_domaine"], "Informatique")
+        self.assertEqual(filtree.context["total_beneficiaires"], 1)
+
     def test_pages_declarent_un_viewport_adapte_aux_telephones(self):
         for url in (reverse("dashboard:public"), reverse("login")):
             self.assertContains(self.client.get(url), 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"')

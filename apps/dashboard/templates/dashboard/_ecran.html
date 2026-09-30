@@ -5,7 +5,7 @@
         <div>
             <span class="eyebrow">{% if est_public %}Transparence &middot; ONEQ / MENFOP{% else %}Vue d'ensemble{% endif %}</span>
             <h1>{% if est_public %}Résultats du programme de formation{% else %}Tableau de bord{% endif %}</h1>
-            <p>{% if est_public %}Insertion et satisfaction des bénéficiaires &mdash; EFTP, INAP, ANEFIP &middot; données agrégées et anonymisées{% else %}Parcours, satisfaction et répartition des bénéficiaires de tous les cycles{% endif %}</p>
+            <p>{% if est_public %}Insertion et satisfaction des bénéficiaires &mdash; DGFP, INAP, ANEFIP &middot; données agrégées et anonymisées{% else %}Parcours, satisfaction et répartition des bénéficiaires de tous les cycles{% endif %}</p>
         </div>
         <div class="dash-tools">
             {% if not est_public and nav_soumissions_a_traiter %}
@@ -29,6 +29,15 @@
                         <option value="">Toutes les institutions</option>
                         {% for institution in institutions %}
                         <option value="{{ institution.id }}" {% if filtre_institution == institution.id|stringformat:"s" %}selected{% endif %}>{{ institution.libelle }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label for="domaine">Domaine</label>
+                    <select name="domaine" id="domaine" onchange="this.form.submit()">
+                        <option value="">Tous les domaines</option>
+                        {% for d in domaines_disponibles %}
+                        <option value="{{ d }}" {% if filtre_domaine == d %}selected{% endif %}>{{ d }}</option>
                         {% endfor %}
                     </select>
                 </div>
