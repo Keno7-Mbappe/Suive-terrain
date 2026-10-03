@@ -20,11 +20,22 @@ Colonnes attendues :
 - Feuille "formations" : id_formation (ignoré), id_beneficiaire, filiere,
   centre, date_debut, date_fin.
 
-Dédoublonnage : comme pour l'import legacy, sur (nom, prénom, date de
-naissance), restreint à l'institution importée - un ré-import du même fichier
-met à jour plutôt que de dupliquer, y compris en cas de reprise après coupure
-réseau. Jamais entre institutions différentes : un homonyme ailleurs n'est
-presque toujours pas la même personne (voir `Beneficiaire.trouver_doublons_potentiels`).
+Dédoublonnage : sur (nom, prénom, date de naissance), restreint à l'institution
+importée - un ré-import du même fichier met à jour plutôt que de dupliquer, y
+compris en cas de reprise après coupure réseau. Jamais entre institutions
+différentes : un homonyme ailleurs n'est presque toujours pas la même personne
+(voir `Beneficiaire.trouver_doublons_potentiels`).
+
+Un même nom + même date de naissance ne suffit toutefois pas à lui seul : les
+listes nominatives institutionnelles comportent beaucoup d'homonymes (prénoms
+et patronymes très répétitifs), et sexe/quartier/téléphone s'y avèrent trop peu
+fiables pour trancher (coquilles, champs vides). On ne fusionne donc deux
+lignes de même identité que si elles partagent au moins une formation ; une
+même personne listée deux fois pour la MÊME formation reste une seule fiche
+(doublon de saisie), mais réapparaître sous une formation différente crée une
+fiche distincte plutôt que d'être traité comme un second parcours de la même
+personne (cf. incident constaté sur la liste DGFP : 28 noms sur 34 homonymes
+suivaient en réalité des formations sans aucun rapport).
 
 Champs manquants dans la liste source (sexe, date de naissance, filière et
 date de début de formation) : laissés "non renseigné" (chaîne vide / date
@@ -37,6 +48,7 @@ automatiquement plutôt que de faire échouer tout l'import.
 """
 
 import time
+from collections import defaultdict
 from pathlib import Path
 
 import openpyxl
@@ -110,11 +122,58 @@ class Command(BaseCommand):
             if feuille not in classeur.sheetnames:
                 raise CommandError(f"Feuille '{feuille}' absente de {chemin.name}.")
 
-        beneficiaires_par_id, statuts_par_id = self._importer_beneficiaires(classeur["beneficiaires"])
+        domaines_par_id_source = self._domaines_par_id_source(classeur["formations"])
+        beneficiaires_par_id, statuts_par_id = self._importer_beneficiaires(
+            classeur["beneficiaires"], domaines_par_id_source
+        )
         self._importer_formations(classeur["formations"], beneficiaires_par_id, statuts_par_id)
         self.stdout.write(self.style.SUCCESS("Import terminé."))
 
-    def _importer_beneficiaires(self, feuille):
+    def _domaines_par_id_source(self, feuille):
+        """Domaine(s) associé(s) à chaque id_beneficiaire source, lus à l'avance sur la
+        feuille "formations" - nécessaire dès la 1ère passe (bénéficiaires) pour décider
+        si deux lignes de même identité désignent la même personne (cf. docstring du
+        module)."""
+        entetes = [c.value for c in feuille[1]]
+        domaines = defaultdict(set)
+        for ligne in feuille.iter_rows(min_row=2, values_only=True):
+            if not any(ligne):
+                continue
+            donnees = dict(zip(entetes, ligne))
+            domaine = (donnees.get("filiere") or "").strip()
+            if domaine:
+                domaines[donnees["id_beneficiaire"]].add(domaine)
+        return domaines
+
+    def _trouver_ou_creer(self, deja_vus, nom, prenom, date_naissance, institution, domaines_ligne):
+        """Retrouve le bénéficiaire correspondant à cette ligne, ou en crée un nouveau.
+        `deja_vus` suit, pour cet import, les bénéficiaires déjà rencontrés par identité
+        (nom, prénom, date de naissance, institution) avec les domaines qui leur sont déjà
+        associés - une ligne sans domaine en commun avec aucun d'eux est un homonyme, pas
+        un second parcours de la même personne (cf. docstring du module)."""
+        cle = (nom.lower(), prenom.lower(), date_naissance, institution.pk)
+        for candidat, domaines_connus in deja_vus[cle]:
+            if not domaines_ligne or not domaines_connus or (domaines_ligne & domaines_connus):
+                domaines_connus.update(domaines_ligne)
+                return candidat
+        # Comparaison par clé primaire, pas par identité d'objet Python : la requête
+        # ci-dessous reconstruit un nouvel objet à chaque appel, même pour une fiche déjà
+        # rencontrée au tour précédent (et dont les formations ne sont pas encore
+        # enregistrées en base à ce stade - 2e passage - ce qui la ferait sinon paraître
+        # "sans formation connue" et fusionner par défaut, cf. bug constaté).
+        deja_connus = {c.pk for c, _ in deja_vus[cle] if c.pk}
+        for candidat in Beneficiaire.trouver_doublons_potentiels(nom, prenom, date_naissance, institution=institution):
+            if candidat.pk in deja_connus:
+                continue
+            domaines_existants = set(candidat.formations.exclude(domaine="").values_list("domaine", flat=True))
+            if not domaines_ligne or not domaines_existants or (domaines_ligne & domaines_existants):
+                deja_vus[cle].append((candidat, domaines_existants | domaines_ligne))
+                return candidat
+        nouveau = Beneficiaire(id_beneficiaire=None)
+        deja_vus[cle].append((nouveau, set(domaines_ligne)))
+        return nouveau
+
+    def _importer_beneficiaires(self, feuille, domaines_par_id_source):
         # Le statut de formation ("formé", etc.) n'existe que sur cette feuille
         # (la feuille "formations" n'a pas de colonne statut) - on le conserve
         # ici pour l'appliquer aux formations de ce bénéficiaire au 2e passage.
@@ -124,14 +183,18 @@ class Command(BaseCommand):
         total = 0
         sans_sexe = 0
         sans_date_naissance = 0
+        deja_vus = defaultdict(list)
         for ligne in feuille.iter_rows(min_row=2, values_only=True):
             if not any(ligne):
                 continue
             donnees = dict(zip(entetes, ligne))
             id_source = donnees["id_beneficiaire"]
             code_institution = (donnees.get("id_institution") or "").strip().lower()
+            domaines_ligne = domaines_par_id_source.get(id_source, set())
 
-            def importer_cette_ligne(donnees=donnees, id_source=id_source, code_institution=code_institution):
+            def importer_cette_ligne(
+                donnees=donnees, id_source=id_source, code_institution=code_institution, domaines_ligne=domaines_ligne
+            ):
                 try:
                     institution = Institution.objects.get(type=code_institution)
                 except Institution.DoesNotExist:
@@ -142,14 +205,11 @@ class Command(BaseCommand):
                 nom, prenom = _decouper_nom_complet(donnees["nom_complet"])
                 region_code = REGION_PAR_LIBELLE.get((donnees.get("region") or "").strip().lower(), "djibouti")
 
-                # Recherche de doublon restreinte à cette institution : un homonyme dans une
-                # AUTRE institution n'est presque toujours pas la même personne (cf. docstring
-                # de trouver_doublons_potentiels) - le confondre lui volerait son institution.
-                beneficiaire = Beneficiaire.trouver_doublons_potentiels(
-                    nom, prenom, donnees["date_naissance"], institution=institution
-                ).first()
-                if beneficiaire is None:
-                    beneficiaire = Beneficiaire(id_beneficiaire=None)
+                # Recherche de doublon restreinte à cette institution et à un recoupement de
+                # formation (cf. docstring du module) : un homonyme dans une AUTRE institution,
+                # ou suivant une formation sans rapport, n'est presque toujours pas la même
+                # personne - le confondre lui volerait son institution ou son parcours.
+                beneficiaire = self._trouver_ou_creer(deja_vus, nom, prenom, donnees["date_naissance"], institution, domaines_ligne)
                 beneficiaire.nom = nom
                 beneficiaire.prenom = prenom
                 # Sexe et date de naissance : parfois absents des listes nominatives sources -
