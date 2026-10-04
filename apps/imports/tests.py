@@ -12,6 +12,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.beneficiaires.models import Beneficiaire
+from apps.certifications.models import Certification
 from apps.comptes.models import Profile
 from apps.formations.models import Formation
 from apps.referentiels.models import CycleEnquete, Institution
@@ -229,7 +230,7 @@ class SoumissionActionsViewTests(TestCase):
         self.assertEqual(soumission.statut, "doublon")
 
 
-def _classeur_liste_nominative(tmp_path, lignes_beneficiaires, lignes_formations):
+def _classeur_liste_nominative(tmp_path, lignes_beneficiaires, lignes_formations, lignes_certificats=None):
     """Construit un fichier au format "PDCED-Skills_<INSTITUTION>-liste-nominative.xlsx"
     (mêmes colonnes, mêmes dates en texte que les vraies listes institutionnelles)."""
     classeur = openpyxl.Workbook()
@@ -245,6 +246,11 @@ def _classeur_liste_nominative(tmp_path, lignes_beneficiaires, lignes_formations
     feuille_f.append(["id_formation", "id_beneficiaire", "filiere", "centre", "date_debut", "date_fin"])
     for ligne in lignes_formations:
         feuille_f.append(ligne)
+    if lignes_certificats is not None:
+        feuille_c = classeur.create_sheet("Certificat")
+        feuille_c.append(["id_certificat", "id_beneficiaire", "filiere", "centre", "date_certificat"])
+        for ligne in lignes_certificats:
+            feuille_c.append(ligne)
     chemin = tmp_path / "liste.xlsx"
     classeur.save(chemin)
     return str(chemin)
@@ -312,6 +318,57 @@ class ImportBeneficiairesExcelTests(TestCase):
             call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
         self.assertEqual(Beneficiaire.objects.filter(institution=self.anefip).count(), 1)
         self.assertEqual(Beneficiaire.objects.filter(institution=self.dgfp).count(), 1)
+
+    def test_importe_les_certificats_de_la_feuille_optionnelle(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI ROBLEH", "F", "1999-03-01", 27, "Balbala", "Djibouti", "BAC", 77000000, "ANEFIP", "formé")],
+                [("F-0001", "X-0001", "Agent de securite", "Centre A", "2025-01-10", "2025-06-10")],
+                [("AC-0001", "X-0001", "Agent de securite", "Centre A", "2025-09-17")],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        b = Beneficiaire.objects.get(institution=self.anefip)
+        certificat = Certification.objects.get(beneficiaire=b)
+        self.assertEqual(certificat.type_certificat, "Agent de securite")
+        self.assertEqual(certificat.date_certification, date(2025, 9, 17))
+
+    def test_fichier_sans_feuille_certificat_nimporte_rien_et_ne_plante_pas(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI ROBLEH", "F", "1999-03-01", 27, "Balbala", "Djibouti", "BAC", 77000000, "ANEFIP", "formé")],
+                [("F-0001", "X-0001", "Informatique", "Centre A", "2026-01-10", "2026-06-10")],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        self.assertEqual(Certification.objects.count(), 0)
+
+    def test_certificat_sans_date_est_ignore_sans_planter(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI ROBLEH", "F", "1999-03-01", 27, "Balbala", "Djibouti", "BAC", 77000000, "ANEFIP", "formé")],
+                [("F-0001", "X-0001", "Informatique", "Centre A", "2026-01-10", "2026-06-10")],
+                [("AC-0001", "X-0001", "Informatique", "Centre A", None)],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        self.assertEqual(Certification.objects.count(), 0)
+
+    def test_reimport_du_meme_fichier_ne_duplique_pas_les_certificats(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_nominative(
+                Path(tmp),
+                [("X-0001", "AMINA ALI ROBLEH", "F", "1999-03-01", 27, "Balbala", "Djibouti", "BAC", 77000000, "ANEFIP", "formé")],
+                [("F-0001", "X-0001", "Agent de securite", "Centre A", "2025-01-10", "2025-06-10")],
+                [("AC-0001", "X-0001", "Agent de securite", "Centre A", "2025-09-17")],
+            )
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
+        self.assertEqual(Certification.objects.count(), 1)
 
     def test_meme_nom_meme_date_naissance_formation_differente_cree_deux_fiches(self):
         # Incident constaté sur la liste DGFP : 28 des 34 homonymes (même nom, même date

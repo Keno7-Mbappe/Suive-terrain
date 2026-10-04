@@ -1,7 +1,7 @@
 """Importe des bénéficiaires et leurs formations depuis un fichier Excel au
-format "PDCED-Skills_<INSTITUTION>-liste-nominative.xlsx" (2 feuilles :
-"beneficiaires" et "formations", colonnes fixes - voir README dans le corps
-de cette commande).
+format "PDCED-Skills_<INSTITUTION>-liste-nominative.xlsx" (2 feuilles
+obligatoires : "beneficiaires" et "formations" ; 1 feuille optionnelle :
+"Certificat" - colonnes fixes, voir README dans le corps de cette commande).
 
 Comme pour l'import legacy (`import_legacy_supabase`), l'identifiant du
 fichier source (colonne id_beneficiaire, propre à chaque institution -
@@ -19,6 +19,10 @@ Colonnes attendues :
   valeur -> "en_cours", cf. STATUT_VERS_FORMATION).
 - Feuille "formations" : id_formation (ignoré), id_beneficiaire, filiere,
   centre, date_debut, date_fin.
+- Feuille "Certificat" (optionnelle) : id_certificat (ignoré), id_beneficiaire,
+  filiere (-> Certification.type_certificat), centre (ignoré), date_certificat.
+  Une ligne sans bénéficiaire correspondant, sans filière ou sans date est
+  ignorée (compte-rendu en fin d'import) plutôt que de faire planter l'import.
 
 Dédoublonnage : sur (nom, prénom, date de naissance), restreint à l'institution
 importée - un ré-import du même fichier met à jour plutôt que de dupliquer, y
@@ -56,6 +60,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import OperationalError, connection
 
 from apps.beneficiaires.models import Beneficiaire
+from apps.certifications.models import Certification
 from apps.formations.models import Formation
 from apps.referentiels.models import Institution
 
@@ -127,6 +132,8 @@ class Command(BaseCommand):
             classeur["beneficiaires"], domaines_par_id_source
         )
         self._importer_formations(classeur["formations"], beneficiaires_par_id, statuts_par_id)
+        if "Certificat" in classeur.sheetnames:
+            self._importer_certifications(classeur["Certificat"], beneficiaires_par_id)
         self.stdout.write(self.style.SUCCESS("Import terminé."))
 
     def _domaines_par_id_source(self, feuille):
@@ -289,4 +296,32 @@ class Command(BaseCommand):
         if sans_date_debut or sans_filiere:
             self.stdout.write(self.style.WARNING(
                 f"  dont {sans_date_debut} sans date de début et {sans_filiere} sans filière renseignées."
+            ))
+
+    def _importer_certifications(self, feuille, beneficiaires_par_id):
+        entetes = [c.value for c in feuille[1]]
+        total = 0
+        ignorees = 0
+        for ligne in feuille.iter_rows(min_row=2, values_only=True):
+            if not any(ligne):
+                continue
+            donnees = dict(zip(entetes, ligne))
+            beneficiaire = beneficiaires_par_id.get(donnees["id_beneficiaire"])
+            type_certificat = (donnees.get("filiere") or "").strip()
+            date_certification = donnees.get("date_certificat")
+            if beneficiaire is None or not type_certificat or not date_certification:
+                ignorees += 1
+                continue
+
+            def importer_ce_certificat(beneficiaire=beneficiaire, type_certificat=type_certificat, date_certification=date_certification):
+                Certification.objects.get_or_create(
+                    beneficiaire=beneficiaire, type_certificat=type_certificat, date_certification=date_certification,
+                )
+
+            _avec_reprise(importer_ce_certificat)
+            total += 1
+        self.stdout.write(f"{total} certificat(s) importé(s).")
+        if ignorees:
+            self.stdout.write(self.style.WARNING(
+                f"  dont {ignorees} ligne(s) ignorée(s) (bénéficiaire, filière ou date manquants)."
             ))
