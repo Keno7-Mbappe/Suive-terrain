@@ -90,3 +90,41 @@ class FormationListViewFiltresTests(TestCase):
     def test_filtre_par_institution(self):
         reponse = self.client.get(reverse("formations:liste"), {"institution": self.inap.pk})
         self.assertEqual([f.domaine for f in reponse.context["formations"]], ["Couture"])
+
+
+class FormationSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.beneficiaire = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.formation = Formation.objects.create(beneficiaire=self.beneficiaire, domaine="Informatique")
+        self.saisie = User.objects.create_user(username="saisie_test", password="motdepasse123")
+        Profile.objects.filter(user=self.saisie).update(role="saisie", institution=self.dgfp)
+        self.consultation = User.objects.create_user(username="consultation_test", password="motdepasse123")
+
+    def test_supprime_la_formation_sans_toucher_au_beneficiaire(self):
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("formations:supprimer", args=[self.formation.pk]))
+        self.assertRedirects(reponse, reverse("formations:liste"))
+        self.assertFalse(Formation.objects.filter(pk=self.formation.pk).exists())
+        self.assertTrue(Beneficiaire.objects.filter(pk=self.beneficiaire.pk).exists())
+
+    def test_role_consultation_refuse(self):
+        self.client.force_login(self.consultation)
+        reponse = self.client.post(reverse("formations:supprimer", args=[self.formation.pk]))
+        self.assertEqual(reponse.status_code, 403)
+        self.assertTrue(Formation.objects.filter(pk=self.formation.pk).exists())
+
+    def test_ne_peut_pas_supprimer_une_formation_dune_autre_institution(self):
+        beneficiaire_inap = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        formation_inap = Formation.objects.create(beneficiaire=beneficiaire_inap, domaine="Couture")
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("formations:supprimer", args=[formation_inap.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTrue(Formation.objects.filter(pk=formation_inap.pk).exists())

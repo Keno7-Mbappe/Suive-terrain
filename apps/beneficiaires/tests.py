@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.comptes.models import Profile
+from apps.formations.models import Formation
 from apps.referentiels.models import Institution
 
 from .models import Beneficiaire, SequenceAnnuelle
@@ -228,3 +230,40 @@ class BeneficiaireListViewFiltresTests(TestCase):
     def test_filtre_par_institution(self):
         reponse = self.client.get(reverse("beneficiaires:liste"), {"institution": self.inap.pk})
         self.assertEqual([b.nom for b in reponse.context["beneficiaires"]], ["Omar"])
+
+
+class BeneficiaireSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = _institution("DGFP")
+        self.inap = _institution("INAP")
+        self.beneficiaire = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        Formation.objects.create(beneficiaire=self.beneficiaire, domaine="Informatique")
+        self.saisie = User.objects.create_user(username="saisie_test", password="motdepasse123")
+        Profile.objects.filter(user=self.saisie).update(role="saisie", institution=self.dgfp)
+        self.consultation = User.objects.create_user(username="consultation_test", password="motdepasse123")
+
+    def test_supprime_le_beneficiaire_et_ses_formations(self):
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("beneficiaires:supprimer", args=[self.beneficiaire.pk]))
+        self.assertRedirects(reponse, reverse("beneficiaires:liste"))
+        self.assertFalse(Beneficiaire.objects.filter(pk=self.beneficiaire.pk).exists())
+        self.assertFalse(Formation.objects.filter(beneficiaire_id=self.beneficiaire.pk).exists())
+
+    def test_role_consultation_refuse(self):
+        self.client.force_login(self.consultation)
+        reponse = self.client.post(reverse("beneficiaires:supprimer", args=[self.beneficiaire.pk]))
+        self.assertEqual(reponse.status_code, 403)
+        self.assertTrue(Beneficiaire.objects.filter(pk=self.beneficiaire.pk).exists())
+
+    def test_ne_peut_pas_supprimer_un_beneficiaire_dune_autre_institution(self):
+        autre = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("beneficiaires:supprimer", args=[autre.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTrue(Beneficiaire.objects.filter(pk=autre.pk).exists())

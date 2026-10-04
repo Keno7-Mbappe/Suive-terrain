@@ -545,6 +545,7 @@ a { color: inherit; }
 .secondary-button:disabled { opacity: .5; cursor: not-allowed; }
 .danger-button { background: var(--surface); color: var(--bad-ink); border-color: #F2B8BB; }
 .danger-button:hover { background: var(--bad-bg); border-color: var(--bad); }
+.form-actions .inline-form:has(.danger-button) { margin-left: auto; }
 @media (prefers-reduced-motion: reduce) {
     .primary-button:active, .secondary-button:active, .danger-button:active, .nav-link:active { transform: none; }
 }
@@ -796,7 +797,8 @@ body:has(.login-wrapper) {
     .crud-form p { flex-basis: 100%; }
     .crud-form input, .crud-form select, .crud-form textarea { font-size: 16px; padding: 12px 14px; }
     .form-actions { flex-direction: column-reverse; }
-    .form-actions .primary-button, .form-actions .secondary-button { width: 100%; }
+    .form-actions .primary-button, .form-actions .secondary-button, .form-actions .inline-form { width: 100%; margin-left: 0; }
+    .form-actions .danger-button { width: 100%; }
     .form-actions-page { flex-direction: column-reverse; }
     .form-actions-page .primary-button, .form-actions-page .secondary-button { width: 100%; }
     .champ-multiple .options > div { gap: 4px 18px; }

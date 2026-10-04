@@ -7,14 +7,21 @@
         {% if form.non_field_errors %}
         <div class="form-alert">{{ form.non_field_errors|join:" " }}</div>
         {% endif %}
-        <form method="post" class="crud-form" novalidate>
+        <form method="post" class="crud-form" novalidate id="crud-form">
             {% csrf_token %}
             {{ form.as_p }}
-            <div class="form-actions">
-                <button type="submit" class="primary-button">Enregistrer</button>
-                <a href="{{ retour_url }}" class="secondary-button">Annuler</a>
-            </div>
         </form>
+        <div class="form-actions">
+            <button type="submit" form="crud-form" class="primary-button">Enregistrer</button>
+            <a href="{{ retour_url }}" class="secondary-button">Annuler</a>
+            {% if supprimer_url %}
+            <form method="post" action="{{ supprimer_url }}" class="inline-form"
+                  onsubmit="return confirm('{{ supprimer_confirmation|default:"Supprimer définitivement ?"|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="danger-button">Supprimer</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

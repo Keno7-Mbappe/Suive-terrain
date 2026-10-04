@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.BeneficiaireListView.as_view(), name="liste"),
     path("nouveau/", views.BeneficiaireCreateView.as_view(), name="creer"),
     path("<str:pk>/modifier/", views.BeneficiaireUpdateView.as_view(), name="modifier"),
+    path("<str:pk>/supprimer/", views.BeneficiaireSupprimerView.as_view(), name="supprimer"),
 ]

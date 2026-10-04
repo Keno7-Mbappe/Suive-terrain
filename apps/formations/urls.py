@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.FormationListView.as_view(), name="liste"),
     path("nouveau/", views.FormationCreateView.as_view(), name="creer"),
     path("<int:pk>/modifier/", views.FormationUpdateView.as_view(), name="modifier"),
+    path("<int:pk>/supprimer/", views.FormationSupprimerView.as_view(), name="supprimer"),
 ]

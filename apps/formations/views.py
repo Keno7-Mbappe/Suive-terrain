@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.db.models import Count, Q
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.comptes.mixins import InstitutionScopedFormMixin, InstitutionScopedQuerysetMixin, RoleRequiredMixin
@@ -103,4 +105,21 @@ class FormationUpdateView(RoleRequiredMixin, InstitutionScopedFormMixin, Institu
         context = super().get_context_data(**kwargs)
         context["titre"] = f"Modifier {self.object}"
         context["retour_url"] = self.success_url
+        context["supprimer_url"] = reverse("formations:supprimer", args=[self.object.pk])
+        context["supprimer_confirmation"] = f"Supprimer définitivement cette formation ({self.object}) ?"
         return context
+
+
+class FormationSupprimerView(RoleRequiredMixin, View):
+    allowed_roles = ("saisie", "validateur")
+
+    def post(self, request, pk):
+        queryset = Formation.objects.all()
+        profile = getattr(request.user, "profile", None)
+        if profile is not None and profile.institution_id is not None:
+            queryset = queryset.filter(beneficiaire__institution_id=profile.institution_id)
+        formation = get_object_or_404(queryset, pk=pk)
+        reference = str(formation)
+        formation.delete()
+        messages.success(request, f"Formation « {reference} » supprimée.")
+        return redirect("formations:liste")
