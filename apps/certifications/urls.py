@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.CertificationListView.as_view(), name="liste"),
     path("nouveau/", views.CertificationCreateView.as_view(), name="creer"),
     path("<int:pk>/modifier/", views.CertificationUpdateView.as_view(), name="modifier"),
+    path("<int:pk>/supprimer/", views.CertificationSupprimerView.as_view(), name="supprimer"),
 ]

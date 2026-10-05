@@ -1,5 +1,7 @@
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.comptes.mixins import InstitutionScopedFormMixin, InstitutionScopedQuerysetMixin, RoleRequiredMixin
@@ -56,4 +58,21 @@ class CertificationUpdateView(RoleRequiredMixin, InstitutionScopedFormMixin, Ins
         context = super().get_context_data(**kwargs)
         context["titre"] = f"Modifier {self.object}"
         context["retour_url"] = self.success_url
+        context["supprimer_url"] = reverse("certifications:supprimer", args=[self.object.pk])
+        context["supprimer_confirmation"] = f"Supprimer définitivement cette certification ({self.object}) ?"
         return context
+
+
+class CertificationSupprimerView(RoleRequiredMixin, View):
+    allowed_roles = ("saisie", "validateur")
+
+    def post(self, request, pk):
+        queryset = Certification.objects.all()
+        profile = getattr(request.user, "profile", None)
+        if profile is not None and profile.institution_id is not None:
+            queryset = queryset.filter(beneficiaire__institution_id=profile.institution_id)
+        certification = get_object_or_404(queryset, pk=pk)
+        reference = str(certification)
+        certification.delete()
+        messages.success(request, f"Certification « {reference} » supprimée.")
+        return redirect("certifications:liste")

@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.db.models import Avg
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.comptes.mixins import InstitutionScopedFormMixin, InstitutionScopedQuerysetMixin, RoleRequiredMixin
@@ -73,7 +75,24 @@ class SatisfactionUpdateView(RoleRequiredMixin, InstitutionScopedFormMixin, Inst
         context = super().get_context_data(**kwargs)
         context["titre"] = f"Modifier {self.object}"
         context["retour_url"] = self.success_url
+        context["supprimer_url"] = reverse("satisfactions:supprimer", args=[self.object.pk])
+        context["supprimer_confirmation"] = f"Supprimer définitivement cette réponse de satisfaction ({self.object}) ?"
         return context
+
+
+class SatisfactionSupprimerView(RoleRequiredMixin, View):
+    allowed_roles = ("saisie", "validateur")
+
+    def post(self, request, pk):
+        queryset = Satisfaction.objects.all()
+        profile = getattr(request.user, "profile", None)
+        if profile is not None and profile.institution_id is not None:
+            queryset = queryset.filter(beneficiaire__institution_id=profile.institution_id)
+        satisfaction = get_object_or_404(queryset, pk=pk)
+        reference = str(satisfaction)
+        satisfaction.delete()
+        messages.success(request, f"Réponse de satisfaction « {reference} » supprimée.")
+        return redirect("satisfactions:liste")
 
 
 class SatisfactionInstitutionListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListView):
@@ -129,4 +148,21 @@ class SatisfactionInstitutionUpdateView(
         context = super().get_context_data(**kwargs)
         context["titre"] = f"Modifier {self.object}"
         context["retour_url"] = self.success_url
+        context["supprimer_url"] = reverse("satisfactions:supprimer_institution", args=[self.object.pk])
+        context["supprimer_confirmation"] = f"Supprimer définitivement cette satisfaction institutionnelle ({self.object}) ?"
         return context
+
+
+class SatisfactionInstitutionSupprimerView(RoleRequiredMixin, View):
+    allowed_roles = ("saisie", "validateur")
+
+    def post(self, request, pk):
+        queryset = SatisfactionInstitution.objects.all()
+        profile = getattr(request.user, "profile", None)
+        if profile is not None and profile.institution_id is not None:
+            queryset = queryset.filter(institution_id=profile.institution_id)
+        satisfaction = get_object_or_404(queryset, pk=pk)
+        reference = str(satisfaction)
+        satisfaction.delete()
+        messages.success(request, f"Satisfaction institutionnelle « {reference} » supprimée.")
+        return redirect("satisfactions:liste_institution")

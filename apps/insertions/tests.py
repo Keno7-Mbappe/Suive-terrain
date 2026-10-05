@@ -44,3 +44,40 @@ class InsertionScopingTests(TestCase):
 
         liste = self.client.get(reverse("insertions:liste"))
         self.assertEqual(len(liste.context["insertions"]), 1)
+
+
+class InsertionSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.beneficiaire = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.insertion = Insertion.objects.create(beneficiaire=self.beneficiaire, situation_prof="emploi_salarie")
+        self.saisie = User.objects.create_user(username="saisie_test", password="motdepasse123")
+        Profile.objects.filter(user=self.saisie).update(role="saisie", institution=self.dgfp)
+        self.consultation = User.objects.create_user(username="consultation_test", password="motdepasse123")
+
+    def test_supprime_linsertion(self):
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("insertions:supprimer", args=[self.insertion.pk]))
+        self.assertRedirects(reponse, reverse("insertions:liste"))
+        self.assertFalse(Insertion.objects.filter(pk=self.insertion.pk).exists())
+
+    def test_role_consultation_refuse(self):
+        self.client.force_login(self.consultation)
+        reponse = self.client.post(reverse("insertions:supprimer", args=[self.insertion.pk]))
+        self.assertEqual(reponse.status_code, 403)
+        self.assertTrue(Insertion.objects.filter(pk=self.insertion.pk).exists())
+
+    def test_ne_peut_pas_supprimer_une_insertion_dune_autre_institution(self):
+        beneficiaire_inap = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        insertion_inap = Insertion.objects.create(beneficiaire=beneficiaire_inap, situation_prof="auto_emploi")
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("insertions:supprimer", args=[insertion_inap.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTrue(Insertion.objects.filter(pk=insertion_inap.pk).exists())

@@ -44,3 +44,44 @@ class CertificationScopingTests(TestCase):
 
         liste = self.client.get(reverse("certifications:liste"))
         self.assertEqual(len(liste.context["certifications"]), 1)
+
+
+class CertificationSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.beneficiaire = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.certification = Certification.objects.create(
+            beneficiaire=self.beneficiaire, type_certificat="CAP Informatique", date_certification=date(2026, 6, 15),
+        )
+        self.saisie = User.objects.create_user(username="saisie_test", password="motdepasse123")
+        Profile.objects.filter(user=self.saisie).update(role="saisie", institution=self.dgfp)
+        self.consultation = User.objects.create_user(username="consultation_test", password="motdepasse123")
+
+    def test_supprime_la_certification(self):
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("certifications:supprimer", args=[self.certification.pk]))
+        self.assertRedirects(reponse, reverse("certifications:liste"))
+        self.assertFalse(Certification.objects.filter(pk=self.certification.pk).exists())
+
+    def test_role_consultation_refuse(self):
+        self.client.force_login(self.consultation)
+        reponse = self.client.post(reverse("certifications:supprimer", args=[self.certification.pk]))
+        self.assertEqual(reponse.status_code, 403)
+        self.assertTrue(Certification.objects.filter(pk=self.certification.pk).exists())
+
+    def test_ne_peut_pas_supprimer_une_certification_dune_autre_institution(self):
+        beneficiaire_inap = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        certification_inap = Certification.objects.create(
+            beneficiaire=beneficiaire_inap, type_certificat="CAP Couture", date_certification=date(2026, 6, 15),
+        )
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("certifications:supprimer", args=[certification_inap.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTrue(Certification.objects.filter(pk=certification_inap.pk).exists())

@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.SuiviListView.as_view(), name="liste"),
     path("nouveau/", views.SuiviCreateView.as_view(), name="creer"),
     path("<int:pk>/modifier/", views.SuiviUpdateView.as_view(), name="modifier"),
+    path("<int:pk>/supprimer/", views.SuiviSupprimerView.as_view(), name="supprimer"),
 ]

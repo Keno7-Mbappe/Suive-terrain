@@ -79,3 +79,44 @@ class SuiviScopingEtLogiqueTests(TestCase):
         self.client.force_login(self.saisie_eftp)
         liste = self.client.get(reverse("suivis:liste"))
         self.assertEqual(len(liste.context["suivis"]), 0)
+
+
+class SuiviSupprimerViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.beneficiaire = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.suivi = Suivi.objects.create(
+            beneficiaire=self.beneficiaire, vague="m3", date_suivi=date(2026, 4, 1), issue_contact="joint",
+        )
+        self.saisie = User.objects.create_user(username="saisie_test", password="motdepasse123")
+        Profile.objects.filter(user=self.saisie).update(role="saisie", institution=self.dgfp)
+        self.consultation = User.objects.create_user(username="consultation_test", password="motdepasse123")
+
+    def test_supprime_le_suivi(self):
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("suivis:supprimer", args=[self.suivi.pk]))
+        self.assertRedirects(reponse, reverse("suivis:liste"))
+        self.assertFalse(Suivi.objects.filter(pk=self.suivi.pk).exists())
+
+    def test_role_consultation_refuse(self):
+        self.client.force_login(self.consultation)
+        reponse = self.client.post(reverse("suivis:supprimer", args=[self.suivi.pk]))
+        self.assertEqual(reponse.status_code, 403)
+        self.assertTrue(Suivi.objects.filter(pk=self.suivi.pk).exists())
+
+    def test_ne_peut_pas_supprimer_un_suivi_dune_autre_institution(self):
+        beneficiaire_inap = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.inap,
+        )
+        suivi_inap = Suivi.objects.create(
+            beneficiaire=beneficiaire_inap, vague="m3", date_suivi=date(2026, 4, 1), issue_contact="joint",
+        )
+        self.client.force_login(self.saisie)
+        reponse = self.client.post(reverse("suivis:supprimer", args=[suivi_inap.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTrue(Suivi.objects.filter(pk=suivi_inap.pk).exists())
