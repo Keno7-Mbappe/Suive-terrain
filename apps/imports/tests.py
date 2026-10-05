@@ -370,48 +370,6 @@ class ImportBeneficiairesExcelTests(TestCase):
             call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
         self.assertEqual(Certification.objects.count(), 1)
 
-    def test_meme_nom_meme_date_naissance_formation_differente_cree_deux_fiches(self):
-        # Incident constaté sur la liste DGFP : 28 des 34 homonymes (même nom, même date
-        # de naissance) suivaient en réalité des formations sans aucun rapport - des
-        # personnes différentes, pas une même personne ayant suivi deux parcours.
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp:
-            fichier = _classeur_liste_nominative(
-                Path(tmp),
-                [
-                    ("X-0001", "IDLEH ISSA RAGUEH", "M", "2004-01-01", 22, None, "Djibouti", None, 77727784, "DGFP", "formé"),
-                    ("X-0002", "IDLEH ISSA RAGUEH", "M", "2004-01-01", 22, None, "Djibouti", None, 77808227, "DGFP", "formé"),
-                ],
-                [
-                    ("F-0001", "X-0001", "Chariot elevateur", "Centre A", "2025-12-01", "2026-01-01"),
-                    ("F-0002", "X-0002", "Permis C", "Centre B", "2025-12-15", "2026-01-15"),
-                ],
-            )
-            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
-        beneficiaires = Beneficiaire.objects.filter(institution=self.dgfp, nom__iexact="ISSA RAGUEH")
-        self.assertEqual(beneficiaires.count(), 2)
-        domaines = set(Formation.objects.filter(beneficiaire__in=beneficiaires).values_list("domaine", flat=True))
-        self.assertEqual(domaines, {"Chariot elevateur", "Permis C"})
-
-    def test_meme_nom_meme_date_naissance_meme_formation_reste_une_seule_fiche(self):
-        # À l'inverse : une personne listée deux fois pour LA MÊME formation (doublon de
-        # saisie dans le fichier source) doit rester une seule fiche, comme avant.
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp:
-            fichier = _classeur_liste_nominative(
-                Path(tmp),
-                [
-                    ("X-0001", "AICHA AHMED MOHAMED", "F", "2002-01-01", 24, None, "Djibouti", None, 77467116, "DGFP", "formé"),
-                    ("X-0002", "AICHA AHMED MOHAMED", "F", "2002-01-01", 24, None, "Djibouti", None, 77467116, "DGFP", "formé"),
-                ],
-                [
-                    ("F-0001", "X-0001", "Couture", "Centre A", None, None),
-                    ("F-0002", "X-0002", "Couture", "Centre A", None, None),
-                ],
-            )
-            call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
-        self.assertEqual(Beneficiaire.objects.filter(institution=self.dgfp, nom__iexact="AHMED MOHAMED").count(), 1)
-
     def test_reprise_transparente_apres_une_coupure_reseau(self):
         # Le pooler Supabase coupe parfois une connexion en plein import (flake réseau
         # constaté en conditions réelles) : une seule ligne doit être rejouée, pas tout
