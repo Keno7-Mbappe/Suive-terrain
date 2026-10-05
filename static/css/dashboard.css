@@ -599,6 +599,44 @@ a { color: inherit; }
 .form-actions { flex-basis: 100%; display: flex; gap: 10px; margin-top: 18px; padding-top: 20px; border-top: 1px solid var(--border); }
 .form-actions-page { display: flex; gap: 10px; margin: var(--space-4) 0 var(--space-6); }
 
+/* Recherche d'un bénéficiaire (bouton + modale), injectée en JS à côté de tout
+   champ #id_beneficiaire - utile dès que la liste déroulante est trop longue
+   à parcourir (DGFP compte plus de 1600 bénéficiaires). */
+.recherche-benef-bouton { margin-top: 8px; align-self: flex-start; font-size: 12.5px; padding: 8px 16px; }
+.recherche-benef-backdrop {
+    position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-start; justify-content: center;
+    padding: 10vh 16px 16px; background: rgba(30,25,21,.45);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.recherche-benef-backdrop.ouvert { opacity: 1; pointer-events: auto; }
+.recherche-benef-modal {
+    width: min(480px, 100%); max-height: 70vh; display: flex; flex-direction: column;
+    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border); padding: 22px 22px 14px;
+    transform: translateY(-10px); transition: transform .2s ease;
+}
+.recherche-benef-backdrop.ouvert .recherche-benef-modal { transform: translateY(0); }
+.recherche-benef-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.recherche-benef-head h3 { margin: 0; font-size: 16px; font-weight: 750; }
+.recherche-benef-fermer {
+    width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--surface-2); color: var(--ink-muted);
+    font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.recherche-benef-fermer:hover { background: var(--peach-100); color: var(--brand-ink); }
+.recherche-benef-input {
+    width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border-strong);
+    font-size: 14px; font-family: inherit; color: var(--ink); background: var(--surface-2);
+    box-sizing: border-box; margin-bottom: 10px; flex-shrink: 0;
+}
+.recherche-benef-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3.5px rgba(255,122,0,.18); background: var(--surface); }
+.recherche-benef-resultats { list-style: none; margin: 0; padding: 0; overflow-y: auto; border-top: 1px solid var(--border); }
+.recherche-benef-resultats li {
+    padding: 11px 6px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .12s ease;
+}
+.recherche-benef-resultats li:hover, .recherche-benef-resultats li:focus { background: var(--peach-50); outline: none; }
+.recherche-benef-resultats li.recherche-benef-vide { color: var(--ink-muted); cursor: default; text-align: center; padding: 20px 6px; }
+.recherche-benef-resultats li.recherche-benef-vide:hover { background: none; }
+
 .champ-multiple { flex: 1 1 100%; }
 .champ-multiple > label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
 .champ-multiple .options > div { display: flex; flex-wrap: wrap; gap: 10px 26px; }

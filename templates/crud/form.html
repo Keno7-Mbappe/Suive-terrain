@@ -24,4 +24,83 @@
         </div>
     </div>
 </div>
+{% if form.beneficiaire %}
+<script>
+(function () {
+    var select = document.getElementById("id_beneficiaire");
+    if (!select) return;
+
+    var bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "secondary-button recherche-benef-bouton";
+    bouton.textContent = "Rechercher un bénéficiaire";
+    select.insertAdjacentElement("afterend", bouton);
+
+    var backdrop = document.createElement("div");
+    backdrop.className = "recherche-benef-backdrop";
+    backdrop.innerHTML =
+        '<div class="recherche-benef-modal" role="dialog" aria-modal="true" aria-label="Rechercher un bénéficiaire">' +
+            '<div class="recherche-benef-head">' +
+                '<h3>Rechercher un bénéficiaire</h3>' +
+                '<button type="button" class="recherche-benef-fermer" aria-label="Fermer">&times;</button>' +
+            '</div>' +
+            '<input type="search" class="recherche-benef-input" placeholder="Nom ou prénom">' +
+            '<ul class="recherche-benef-resultats"></ul>' +
+        '</div>';
+    document.body.appendChild(backdrop);
+
+    var input = backdrop.querySelector(".recherche-benef-input");
+    var liste = backdrop.querySelector(".recherche-benef-resultats");
+    var options = Array.prototype.filter.call(select.options, function (o) { return o.value; });
+
+    function rendreResultats(filtre) {
+        var mots = filtre.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        var correspondances = options.filter(function (o) {
+            var texte = o.textContent.toLowerCase();
+            return mots.every(function (m) { return texte.indexOf(m) !== -1; });
+        }).slice(0, 50);
+        liste.innerHTML = "";
+        if (!correspondances.length) {
+            var vide = document.createElement("li");
+            vide.className = "recherche-benef-vide";
+            vide.textContent = filtre ? "Aucun bénéficiaire trouvé." : "Tapez un nom pour chercher.";
+            liste.appendChild(vide);
+            return;
+        }
+        correspondances.forEach(function (o) {
+            var item = document.createElement("li");
+            item.textContent = o.textContent;
+            item.tabIndex = 0;
+            item.addEventListener("click", function () { choisir(o.value); });
+            item.addEventListener("keydown", function (e) { if (e.key === "Enter") choisir(o.value); });
+            liste.appendChild(item);
+        });
+    }
+
+    function choisir(valeur) {
+        select.value = valeur;
+        select.dispatchEvent(new Event("change"));
+        fermerModal();
+    }
+
+    function ouvrirModal() {
+        backdrop.classList.add("ouvert");
+        input.value = "";
+        rendreResultats("");
+        setTimeout(function () { input.focus(); }, 0);
+    }
+    function fermerModal() {
+        backdrop.classList.remove("ouvert");
+    }
+
+    bouton.addEventListener("click", ouvrirModal);
+    backdrop.querySelector(".recherche-benef-fermer").addEventListener("click", fermerModal);
+    backdrop.addEventListener("click", function (e) { if (e.target === backdrop) fermerModal(); });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && backdrop.classList.contains("ouvert")) fermerModal();
+    });
+    input.addEventListener("input", function () { rendreResultats(input.value); });
+})();
+</script>
+{% endif %}
 {% endblock %}
