@@ -81,3 +81,32 @@ class InsertionSupprimerViewTests(TestCase):
         reponse = self.client.post(reverse("insertions:supprimer", args=[insertion_inap.pk]))
         self.assertEqual(reponse.status_code, 404)
         self.assertTrue(Insertion.objects.filter(pk=insertion_inap.pk).exists())
+
+
+class InsertionListViewFiltresTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.beneficiaire1 = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.beneficiaire2 = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.dgfp,
+        )
+        Insertion.objects.create(beneficiaire=self.beneficiaire1, situation_prof="emploi_salarie")
+        Insertion.objects.create(beneficiaire=self.beneficiaire2, situation_prof="en_recherche")
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_du_beneficiaire(self):
+        reponse = self.client.get(reverse("insertions:liste"), {"q": "amina"})
+        self.assertEqual(
+            [i.beneficiaire_id for i in reponse.context["insertions"]], [self.beneficiaire1.pk]
+        )
+
+    def test_filtre_par_situation(self):
+        reponse = self.client.get(reverse("insertions:liste"), {"situation": "en_recherche"})
+        self.assertEqual(
+            [i.beneficiaire_id for i in reponse.context["insertions"]], [self.beneficiaire2.pk]
+        )

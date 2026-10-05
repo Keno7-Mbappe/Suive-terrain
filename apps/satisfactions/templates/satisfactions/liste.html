@@ -10,6 +10,61 @@
     <a href="{% url 'satisfactions:creer' %}" class="primary-button">+ Nouvelle réponse</a>
     {% endif %}
 </div>
+<div class="actions-bar actions-bar-bas">
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="q">Recherche</label>
+            <input type="search" name="q" id="q" value="{{ recherche }}" placeholder="Nom ou prénom">
+        </div>
+        <div class="filter-field">
+            <label for="cycle">Cycle</label>
+            <select name="cycle" id="cycle" onchange="this.form.submit()">
+                <option value="">Tous les cycles</option>
+                {% for id, libelle in cycles %}
+                <option value="{{ id }}" {% if filtre_cycle == id|stringformat:"s" %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="employabilite">Employabilité</label>
+            <select name="employabilite" id="employabilite" onchange="this.form.submit()">
+                <option value="">Toutes</option>
+                {% for code, libelle in ameliorations %}
+                <option value="{{ code }}" {% if filtre_employabilite == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="recommande">Recommande</label>
+            <select name="recommande" id="recommande" onchange="this.form.submit()">
+                <option value="">Tous</option>
+                <option value="oui" {% if filtre_recommande == "oui" %}selected{% endif %}>Oui</option>
+                <option value="non" {% if filtre_recommande == "non" %}selected{% endif %}>Non</option>
+            </select>
+        </div>
+        {% if institutions|length > 1 %}
+        <div class="filter-field">
+            <label for="institution">Institution</label>
+            <select name="institution" id="institution" onchange="this.form.submit()">
+                <option value="">Toutes les institutions</option>
+                {% for id, libelle in institutions %}
+                <option value="{{ id }}" {% if filtre_institution == id|stringformat:"s" %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="filter-field">
+            <label>&nbsp;</label>
+            <button type="submit" class="secondary-button">Rechercher</button>
+        </div>
+        {% if filtres_actifs %}
+        <div class="filter-field">
+            <label>&nbsp;</label>
+            <a href="{% url 'satisfactions:liste' %}" class="reset-link">&times; Réinitialiser</a>
+        </div>
+        {% endif %}
+    </form>
+</div>
 <div class="panel">
     <div class="table-scroll">
     <table class="data-table">
@@ -47,9 +102,9 @@
     </div>
     {% if is_paginated %}
     <div class="pagination">
-        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ querystring_filtres }}">&laquo; Précédent</a>{% endif %}
         <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ querystring_filtres }}">Suivant &raquo;</a>{% endif %}
     </div>
     {% endif %}
 </div>

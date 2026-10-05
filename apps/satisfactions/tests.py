@@ -141,3 +141,43 @@ class SatisfactionInstitutionSupprimerViewTests(TestCase):
         reponse = self.client.post(reverse("satisfactions:supprimer_institution", args=[satisfaction_inap.pk]))
         self.assertEqual(reponse.status_code, 404)
         self.assertTrue(SatisfactionInstitution.objects.filter(pk=satisfaction_inap.pk).exists())
+
+
+class SatisfactionListViewFiltresTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.cycle = CycleEnquete.objects.create(
+            libelle="Cycle 1", date_debut=date(2026, 11, 1), date_fin=date(2026, 11, 30)
+        )
+        self.beneficiaire1 = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.beneficiaire2 = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.dgfp,
+        )
+        Satisfaction.objects.create(
+            beneficiaire=self.beneficiaire1, cycle=self.cycle,
+            note_formation=4, note_formateurs=4, note_contenus=4, note_equipements=4, note_accueil=4,
+            amelioration_employabilite="tout_a_fait", recommande=True,
+        )
+        Satisfaction.objects.create(
+            beneficiaire=self.beneficiaire2, cycle=self.cycle,
+            note_formation=2, note_formateurs=2, note_contenus=2, note_equipements=2, note_accueil=2,
+            amelioration_employabilite="pas_du_tout", recommande=False,
+        )
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_du_beneficiaire(self):
+        reponse = self.client.get(reverse("satisfactions:liste"), {"q": "amina"})
+        self.assertEqual(
+            [s.beneficiaire_id for s in reponse.context["satisfactions"]], [self.beneficiaire1.pk]
+        )
+
+    def test_filtre_par_recommande(self):
+        reponse = self.client.get(reverse("satisfactions:liste"), {"recommande": "non"})
+        self.assertEqual(
+            [s.beneficiaire_id for s in reponse.context["satisfactions"]], [self.beneficiaire2.pk]
+        )

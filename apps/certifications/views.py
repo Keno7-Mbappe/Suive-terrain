@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -18,9 +19,39 @@ class CertificationListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, L
     paginate_by = 25
     institution_lookup = "beneficiaire__institution"
 
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related("beneficiaire", "beneficiaire__institution")
+        self.recherche = self.request.GET.get("q", "").strip()
+        self.filtre_type = self.request.GET.get("type", "")
+        self.filtre_institution = self.request.GET.get("institution", "")
+        for mot in self.recherche.split():
+            queryset = queryset.filter(
+                Q(type_certificat__icontains=mot) | Q(beneficiaire__nom__icontains=mot) | Q(beneficiaire__prenom__icontains=mot)
+            )
+        if self.filtre_type:
+            queryset = queryset.filter(type_certificat=self.filtre_type)
+        if self.filtre_institution:
+            queryset = queryset.filter(beneficiaire__institution_id=self.filtre_institution)
+        return queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["nb_types"] = self.get_queryset().values("type_certificat").distinct().count()
+        toutes = super().get_queryset()
+        context["nb_types"] = toutes.values("type_certificat").distinct().count()
+        context["recherche"] = self.recherche
+        context["filtre_type"] = self.filtre_type
+        context["filtre_institution"] = self.filtre_institution
+        context["types"] = toutes.exclude(type_certificat="").order_by("type_certificat").values_list(
+            "type_certificat", flat=True
+        ).distinct()
+        context["institutions"] = (
+            toutes.order_by("beneficiaire__institution__libelle")
+            .values_list("beneficiaire__institution_id", "beneficiaire__institution__libelle").distinct()
+        )
+        querystring = self.request.GET.copy()
+        querystring.pop("page", None)
+        context["querystring_filtres"] = querystring.urlencode()
+        context["filtres_actifs"] = bool(self.recherche or self.filtre_type or self.filtre_institution)
         return context
 
 

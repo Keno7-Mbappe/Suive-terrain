@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -8,7 +8,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 from apps.comptes.mixins import InstitutionScopedFormMixin, InstitutionScopedQuerysetMixin, RoleRequiredMixin
 
 from .forms import SatisfactionForm, SatisfactionInstitutionForm
-from .models import Satisfaction, SatisfactionInstitution
+from .models import AMELIORATIONS_EMPLOYABILITE, UTILITE_DISPOSITIF, Satisfaction, SatisfactionInstitution
 
 
 def _note_moyenne(queryset, champs):
@@ -33,11 +33,48 @@ class SatisfactionListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
     institution_lookup = "beneficiaire__institution"
 
     def get_queryset(self):
-        return super().get_queryset().select_related("beneficiaire", "cycle")
+        queryset = super().get_queryset().select_related("beneficiaire", "beneficiaire__institution", "cycle")
+        self.recherche = self.request.GET.get("q", "").strip()
+        self.filtre_cycle = self.request.GET.get("cycle", "")
+        self.filtre_employabilite = self.request.GET.get("employabilite", "")
+        self.filtre_recommande = self.request.GET.get("recommande", "")
+        self.filtre_institution = self.request.GET.get("institution", "")
+        for mot in self.recherche.split():
+            queryset = queryset.filter(Q(beneficiaire__nom__icontains=mot) | Q(beneficiaire__prenom__icontains=mot))
+        if self.filtre_cycle:
+            queryset = queryset.filter(cycle_id=self.filtre_cycle)
+        if self.filtre_employabilite:
+            queryset = queryset.filter(amelioration_employabilite=self.filtre_employabilite)
+        if self.filtre_recommande:
+            queryset = queryset.filter(recommande=(self.filtre_recommande == "oui"))
+        if self.filtre_institution:
+            queryset = queryset.filter(beneficiaire__institution_id=self.filtre_institution)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        toutes = super().get_queryset()
         context["note_moyenne"] = _note_moyenne(self.get_queryset(), CHAMPS_NOTES_BENEFICIAIRE)
+        context["recherche"] = self.recherche
+        context["filtre_cycle"] = self.filtre_cycle
+        context["filtre_employabilite"] = self.filtre_employabilite
+        context["filtre_recommande"] = self.filtre_recommande
+        context["filtre_institution"] = self.filtre_institution
+        context["ameliorations"] = AMELIORATIONS_EMPLOYABILITE
+        context["cycles"] = (
+            toutes.order_by("-cycle__date_debut").values_list("cycle_id", "cycle__libelle").distinct()
+        )
+        context["institutions"] = (
+            toutes.order_by("beneficiaire__institution__libelle")
+            .values_list("beneficiaire__institution_id", "beneficiaire__institution__libelle").distinct()
+        )
+        querystring = self.request.GET.copy()
+        querystring.pop("page", None)
+        context["querystring_filtres"] = querystring.urlencode()
+        context["filtres_actifs"] = bool(
+            self.recherche or self.filtre_cycle or self.filtre_employabilite
+            or self.filtre_recommande or self.filtre_institution
+        )
         return context
 
 
@@ -104,11 +141,36 @@ class SatisfactionInstitutionListView(RoleRequiredMixin, InstitutionScopedQuerys
     institution_lookup = "institution"
 
     def get_queryset(self):
-        return super().get_queryset().select_related("institution", "cycle")
+        queryset = super().get_queryset().select_related("institution", "cycle")
+        self.filtre_cycle = self.request.GET.get("cycle", "")
+        self.filtre_institution = self.request.GET.get("institution", "")
+        self.filtre_utilite = self.request.GET.get("utilite", "")
+        if self.filtre_cycle:
+            queryset = queryset.filter(cycle_id=self.filtre_cycle)
+        if self.filtre_institution:
+            queryset = queryset.filter(institution_id=self.filtre_institution)
+        if self.filtre_utilite:
+            queryset = queryset.filter(utilite_dispositif=self.filtre_utilite)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        toutes = super().get_queryset()
         context["note_moyenne"] = _note_moyenne(self.get_queryset(), CHAMPS_NOTES_INSTITUTION)
+        context["filtre_cycle"] = self.filtre_cycle
+        context["filtre_institution"] = self.filtre_institution
+        context["filtre_utilite"] = self.filtre_utilite
+        context["utilites"] = UTILITE_DISPOSITIF
+        context["cycles"] = (
+            toutes.order_by("-cycle__date_debut").values_list("cycle_id", "cycle__libelle").distinct()
+        )
+        context["institutions"] = (
+            toutes.order_by("institution__libelle").values_list("institution_id", "institution__libelle").distinct()
+        )
+        querystring = self.request.GET.copy()
+        querystring.pop("page", None)
+        context["querystring_filtres"] = querystring.urlencode()
+        context["filtres_actifs"] = bool(self.filtre_cycle or self.filtre_institution or self.filtre_utilite)
         return context
 
 

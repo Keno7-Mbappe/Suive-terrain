@@ -85,3 +85,32 @@ class CertificationSupprimerViewTests(TestCase):
         reponse = self.client.post(reverse("certifications:supprimer", args=[certification_inap.pk]))
         self.assertEqual(reponse.status_code, 404)
         self.assertTrue(Certification.objects.filter(pk=certification_inap.pk).exists())
+
+
+class CertificationListViewFiltresTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.beneficiaire1 = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.beneficiaire2 = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.dgfp,
+        )
+        Certification.objects.create(
+            beneficiaire=self.beneficiaire1, type_certificat="CAP Informatique", date_certification=date(2026, 6, 15),
+        )
+        Certification.objects.create(
+            beneficiaire=self.beneficiaire2, type_certificat="CAP Couture", date_certification=date(2026, 6, 15),
+        )
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_du_beneficiaire(self):
+        reponse = self.client.get(reverse("certifications:liste"), {"q": "amina"})
+        self.assertEqual([c.type_certificat for c in reponse.context["certifications"]], ["CAP Informatique"])
+
+    def test_filtre_par_type(self):
+        reponse = self.client.get(reverse("certifications:liste"), {"type": "CAP Couture"})
+        self.assertEqual([c.type_certificat for c in reponse.context["certifications"]], ["CAP Couture"])

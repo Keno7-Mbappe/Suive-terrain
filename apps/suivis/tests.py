@@ -120,3 +120,32 @@ class SuiviSupprimerViewTests(TestCase):
         reponse = self.client.post(reverse("suivis:supprimer", args=[suivi_inap.pk]))
         self.assertEqual(reponse.status_code, 404)
         self.assertTrue(Suivi.objects.filter(pk=suivi_inap.pk).exists())
+
+
+class SuiviListViewFiltresTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.beneficiaire1 = Beneficiaire.objects.create(
+            nom="Ali", prenom="Amina", sexe="F", date_naissance=date(1999, 3, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.beneficiaire2 = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.dgfp,
+        )
+        Suivi.objects.create(
+            beneficiaire=self.beneficiaire1, vague="m3", date_suivi=date(2026, 4, 1), issue_contact="joint",
+        )
+        Suivi.objects.create(
+            beneficiaire=self.beneficiaire2, vague="m6", date_suivi=date(2026, 5, 1), issue_contact="injoignable",
+        )
+        self.utilisateur = User.objects.create_user(username="consultante", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_recherche_par_nom_du_beneficiaire(self):
+        reponse = self.client.get(reverse("suivis:liste"), {"q": "amina"})
+        self.assertEqual([s.beneficiaire_id for s in reponse.context["suivis"]], [self.beneficiaire1.pk])
+
+    def test_filtre_par_vague(self):
+        reponse = self.client.get(reverse("suivis:liste"), {"vague": "m6"})
+        self.assertEqual([s.beneficiaire_id for s in reponse.context["suivis"]], [self.beneficiaire2.pk])

@@ -10,6 +10,45 @@
     <a href="{% url 'satisfactions:creer_institution' %}" class="primary-button">+ Nouvelle réponse</a>
     {% endif %}
 </div>
+<div class="actions-bar actions-bar-bas">
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="cycle">Cycle</label>
+            <select name="cycle" id="cycle" onchange="this.form.submit()">
+                <option value="">Tous les cycles</option>
+                {% for id, libelle in cycles %}
+                <option value="{{ id }}" {% if filtre_cycle == id|stringformat:"s" %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if institutions|length > 1 %}
+        <div class="filter-field">
+            <label for="institution">Institution</label>
+            <select name="institution" id="institution" onchange="this.form.submit()">
+                <option value="">Toutes les institutions</option>
+                {% for id, libelle in institutions %}
+                <option value="{{ id }}" {% if filtre_institution == id|stringformat:"s" %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="filter-field">
+            <label for="utilite">Répond aux besoins</label>
+            <select name="utilite" id="utilite" onchange="this.form.submit()">
+                <option value="">Toutes les réponses</option>
+                {% for code, libelle in utilites %}
+                <option value="{{ code }}" {% if filtre_utilite == code %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if filtres_actifs %}
+        <div class="filter-field">
+            <label>&nbsp;</label>
+            <a href="{% url 'satisfactions:liste_institution' %}" class="reset-link">&times; Réinitialiser</a>
+        </div>
+        {% endif %}
+    </form>
+</div>
 <div class="panel">
     <div class="table-scroll">
     <table class="data-table">
@@ -47,9 +86,9 @@
     </div>
     {% if is_paginated %}
     <div class="pagination">
-        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ querystring_filtres }}">&laquo; Précédent</a>{% endif %}
         <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ querystring_filtres }}">Suivant &raquo;</a>{% endif %}
     </div>
     {% endif %}
 </div>

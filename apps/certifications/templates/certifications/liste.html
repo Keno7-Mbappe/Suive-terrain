@@ -10,6 +10,44 @@
     <a href="{% url 'certifications:creer' %}" class="primary-button">+ Nouvelle certification</a>
     {% endif %}
 </div>
+<div class="actions-bar actions-bar-bas">
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="q">Recherche</label>
+            <input type="search" name="q" id="q" value="{{ recherche }}" placeholder="Bénéficiaire ou type">
+        </div>
+        <div class="filter-field">
+            <label for="type">Type de certificat</label>
+            <select name="type" id="type" onchange="this.form.submit()">
+                <option value="">Tous les types</option>
+                {% for t in types %}
+                <option value="{{ t }}" {% if filtre_type == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if institutions|length > 1 %}
+        <div class="filter-field">
+            <label for="institution">Institution</label>
+            <select name="institution" id="institution" onchange="this.form.submit()">
+                <option value="">Toutes les institutions</option>
+                {% for id, libelle in institutions %}
+                <option value="{{ id }}" {% if filtre_institution == id|stringformat:"s" %}selected{% endif %}>{{ libelle }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="filter-field">
+            <label>&nbsp;</label>
+            <button type="submit" class="secondary-button">Rechercher</button>
+        </div>
+        {% if filtres_actifs %}
+        <div class="filter-field">
+            <label>&nbsp;</label>
+            <a href="{% url 'certifications:liste' %}" class="reset-link">&times; Réinitialiser</a>
+        </div>
+        {% endif %}
+    </form>
+</div>
 <div class="panel">
     <table class="data-table">
         <thead>
@@ -34,9 +72,9 @@
     </table>
     {% if is_paginated %}
     <div class="pagination">
-        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">&laquo; Précédent</a>{% endif %}
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ querystring_filtres }}">&laquo; Précédent</a>{% endif %}
         <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Suivant &raquo;</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ querystring_filtres }}">Suivant &raquo;</a>{% endif %}
     </div>
     {% endif %}
 </div>
