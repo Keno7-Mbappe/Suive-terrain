@@ -152,7 +152,7 @@ class DoublonsTests(TestCase):
             nom="Robleh", prenom="Idriss", sexe="M", date_naissance=None, region="djibouti", institution=institution,
         )
         self.assertEqual(Beneficiaire.trouver_doublons_potentiels("Robleh", "Idriss", None).count(), 0)
-        self.assertEqual(len(Beneficiaire.groupes_doublons()), 0)
+        self.assertEqual(Beneficiaire.groupes_doublons().count(), 0)
 
     def test_correspondance_sans_date_de_naissance_possible_dans_la_meme_institution(self):
         # Nécessaire pour qu'un ré-import du même fichier (reprise après coupure réseau,
@@ -177,53 +177,6 @@ class DoublonsTests(TestCase):
         self.assertEqual(
             Beneficiaire.trouver_doublons_potentiels("Farah", "Amina", None, institution=dgfp).count(), 0
         )
-
-    def test_homonymes_avec_formations_differentes_ne_sont_pas_des_doublons(self):
-        # Même nom + même date de naissance ne suffit pas : s'ils ont suivi des
-        # formations différentes, ce sont très probablement deux personnes distinctes
-        # (cf. incident DGFP), pas un doublon de saisie à signaler pour nettoyage.
-        institution = _institution()
-        b1 = Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        b2 = Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        Formation.objects.create(beneficiaire=b1, domaine="Chariot élévateur")
-        Formation.objects.create(beneficiaire=b2, domaine="Permis C")
-        self.assertEqual(len(Beneficiaire.groupes_doublons()), 0)
-
-    def test_homonymes_avec_la_meme_formation_sont_un_doublon(self):
-        # À l'inverse, la même formation pour les deux est le signe d'un doublon de
-        # saisie réel (la même inscription notée deux fois) - à signaler.
-        institution = _institution()
-        b1 = Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        b2 = Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        Formation.objects.create(beneficiaire=b1, domaine="Couture")
-        Formation.objects.create(beneficiaire=b2, domaine="Couture")
-        self.assertEqual(len(Beneficiaire.groupes_doublons()), 1)
-
-    def test_homonyme_sans_aucune_formation_connue_reste_signale_par_prudence(self):
-        # Sans information sur les formations suivies, impossible de distinguer un
-        # homonyme d'un doublon : on continue à le signaler plutôt que de le masquer.
-        institution = _institution()
-        Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        Beneficiaire.objects.create(
-            nom="Robleh", prenom="Idriss", sexe="M", date_naissance=date(2001, 1, 1),
-            region="djibouti", institution=institution,
-        )
-        self.assertEqual(len(Beneficiaire.groupes_doublons()), 1)
 
 
 class DonneesManquantesTests(TestCase):

@@ -118,48 +118,15 @@ class Beneficiaire(models.Model):
 
     @classmethod
     def groupes_doublons(cls, queryset=None):
-        """Regroupe les bénéficiaires partageant nom+prénom+date de naissance ET au
-        moins une formation en commun (indicateur de qualité de données : doublons
-        potentiels). Même nom + même date de naissance ne suffit pas à lui seul : si
-        les formations suivies sont différentes, c'est presque toujours un homonyme,
-        pas un doublon de saisie - même principe que le dédoublonnage de l'import (cf.
-        `trouver_doublons_potentiels` et l'incident DGFP où 28 homonymes sur 34
-        suivaient en réalité des formations sans rapport). Un homonyme sans aucune
-        formation connue (le sien ou celle de son homonyme) reste signalé par prudence,
-        faute d'information pour les distinguer."""
+        """Regroupe les bénéficiaires partageant nom+prénom+date de naissance
+        (indicateur de qualité de données : doublons potentiels)."""
         queryset = cls.objects.all() if queryset is None else queryset
-        candidats = (
+        return (
             queryset.exclude(date_naissance__isnull=True)
             .values("nom", "prenom", "date_naissance")
             .annotate(occurrences=models.Count("id_beneficiaire"))
             .filter(occurrences__gt=1)
         )
-        confirmes = []
-        for groupe in candidats:
-            membres = list(queryset.filter(
-                nom=groupe["nom"], prenom=groupe["prenom"], date_naissance=groupe["date_naissance"],
-            ))
-            domaines_par_membre = [
-                set(m.formations.exclude(domaine="").values_list("domaine", flat=True)) for m in membres
-            ]
-            parent = list(range(len(membres)))
-
-            def trouver(i, parent=parent):
-                while parent[i] != i:
-                    parent[i] = parent[parent[i]]
-                    i = parent[i]
-                return i
-
-            for i in range(len(membres)):
-                for j in range(i + 1, len(membres)):
-                    if not domaines_par_membre[i] or not domaines_par_membre[j] or (domaines_par_membre[i] & domaines_par_membre[j]):
-                        ri, rj = trouver(i), trouver(j)
-                        if ri != rj:
-                            parent[ri] = rj
-
-            if len({trouver(i) for i in range(len(membres))}) == 1:
-                confirmes.append(groupe)
-        return confirmes
 
     def save(self, *args, **kwargs):
         # Les imports (Kobo, Excel DGFP/INAP/ANEFIP) fournissent souvent des dates sous
