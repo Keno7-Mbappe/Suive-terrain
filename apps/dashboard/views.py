@@ -240,7 +240,7 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         "situations": _liste_repartition(
             situations, "situation_prof", sum(s["total"] for s in situations), dict(SITUATIONS_PRO)
         ),
-        "nb_doublons_potentiels": Beneficiaire.groupes_doublons(beneficiaires).count(),
+        "nb_doublons_potentiels": len(Beneficiaire.groupes_doublons(beneficiaires)),
         "nb_anomalies": _compter_anomalies(beneficiaires),
         # Le suivi se fait par téléphone : la complétude qui compte est la joignabilité,
         # l'e-mail n'est pas collecté dans les listes sources des institutions.

@@ -65,7 +65,7 @@ def generer_rapport_cycle(cycle, institution_id=None):
         ("Taux de suivi (%)", _taux(nb_suivis, total)),
         ("Répondants satisfaction (ce cycle)", satisfactions.count()),
         ("Taux de réponse (%)", _taux(satisfactions.count(), total)),
-        ("Doublons potentiels détectés", doublons.count()),
+        ("Doublons potentiels détectés", len(doublons)),
     ]:
         synthese.append(ligne)
     synthese.column_dimensions["A"].width = 34
