@@ -30,9 +30,12 @@ def _taux(numerateur, denominateur):
     return round(numerateur / denominateur * 100, 1) if denominateur else 0
 
 
-def _liste_repartition(lignes, cle, total, libelles=None, limite=None):
+def _liste_repartition(lignes, cle, total, libelles=None, limite=None, code_field=None):
     """Transforme des lignes {cle: code, "total": n} en éléments d'affichage
-    [{libelle, valeur, pct}] où pct est la part du total (barres de progression)."""
+    [{libelle, valeur, pct}] où pct est la part du total (barres de progression).
+    `code_field`, s'il est donné, ajoute un champ "code" stable (ex. type
+    d'institution) utilisable pour un style qui ne dépend pas de l'ordre
+    d'affichage (cf. couleur fixe par institution)."""
     libelles = libelles or {}
     lignes = list(lignes)[:limite] if limite else list(lignes)
     return [
@@ -40,6 +43,7 @@ def _liste_repartition(lignes, cle, total, libelles=None, limite=None):
             "libelle": libelles.get(ligne[cle], ligne[cle]) or "Non renseigné",
             "valeur": ligne["total"],
             "pct": _taux(ligne["total"], total),
+            **({"code": ligne[code_field]} if code_field else {}),
         }
         for ligne in lignes
     ]
@@ -151,7 +155,8 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
     # --- répartitions --------------------------------------------------------------
     regions = beneficiaires.values("region").annotate(total=Count("id_beneficiaire")).order_by("-total")
     par_institution = (
-        beneficiaires.values("institution__libelle").annotate(total=Count("id_beneficiaire")).order_by("-total")
+        beneficiaires.values("institution__libelle", "institution__type")
+        .annotate(total=Count("id_beneficiaire")).order_by("-total")
     )
     ages = {
         r["tranche_age"]: r["total"]
@@ -200,7 +205,9 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         for libelle, valeur, conversion in etapes
     ]
 
-    institutions_liste = _liste_repartition(par_institution, "institution__libelle", total_beneficiaires)
+    institutions_liste = _liste_repartition(
+        par_institution, "institution__libelle", total_beneficiaires, code_field="institution__type"
+    )
 
     return {
         "total_beneficiaires": total_beneficiaires,
@@ -262,6 +269,7 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
             "institution": {
                 "labels": [i["libelle"] for i in institutions_liste],
                 "values": [i["valeur"] for i in institutions_liste],
+                "codes": [i["code"] for i in institutions_liste],
             },
         },
         "institutions": list(Institution.objects.values("id", "libelle")),

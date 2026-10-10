@@ -187,9 +187,9 @@
                     <canvas id="graphique-institutions" aria-label="Répartition des bénéficiaires par institution" role="img"></canvas>
                     <div class="donut-centre"><small>Total</small><strong data-compte="{{ total_beneficiaires }}">{{ total_beneficiaires }}</strong></div>
                 </div>
-                <ul class="legende-liste palette">
+                <ul class="legende-liste palette-institution">
                     {% for i in institutions_liste %}
-                    <li style="--i: {{ forloop.counter0 }}"><i></i><span>{{ i.libelle }}</span><b data-compte="{{ i.pct|stringformat:'.1f' }}" data-suffixe=" %">{{ i.pct|floatformat:"0" }} %</b></li>
+                    <li style="--i: {{ forloop.counter0 }}" data-institution="{{ i.code }}"><i></i><span>{{ i.libelle }}</span><b data-compte="{{ i.pct|stringformat:'.1f' }}" data-suffixe=" %">{{ i.pct|floatformat:"0" }} %</b></li>
                     {% endfor %}
                 </ul>
                 {% else %}<div class="vide"><strong>Aucune donnée</strong></div>{% endif %}
@@ -283,6 +283,13 @@
     function couleur(nom) { return css.getPropertyValue(nom).trim(); }
     var marque = couleur("--brand"), pale = "#F2A15E", encre = couleur("--ink"), muet = couleur("--ink-muted");
     var palette = ["#FF7A00", "#FFA24D", "#FFC891", "#F4D9BF", "#D9C4AE"];
+    // Couleur fixe par institution (DGFP/INAP/ANEFIP), pas par position : la
+    // meme institution garde toujours la meme couleur, quel que soit l'ordre
+    // ou le filtre affiche (cf. badges de la meme couleur dans les listes).
+    var paletteInstitution = { dgfp: couleur("--inst-dgfp"), inap: couleur("--inst-inap"), anefip: couleur("--inst-anefip") };
+    var couleursInstitutions = (donnees.institution.codes || []).map(function (code, i) {
+        return paletteInstitution[code] || palette[i % palette.length];
+    });
     var estVide = function (valeurs) { return valeurs.every(function (v) { return v === null || v === 0; }); };
     var reduit = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -341,7 +348,7 @@
         new Chart(canvasInst, {
             type: "doughnut",
             data: { labels: donnees.institution.labels,
-                    datasets: [{ data: donnees.institution.values, backgroundColor: palette, borderColor: "#fff", borderWidth: 3, hoverOffset: 6 }] },
+                    datasets: [{ data: donnees.institution.values, backgroundColor: couleursInstitutions, borderColor: "#fff", borderWidth: 3, hoverOffset: 6 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: "68%",
                        animation: reduit ? false : { duration: 900, easing: "easeOutQuint", animateRotate: true, animateScale: true, delay: 300 },
                        plugins: { legend: { display: false }, tooltip: { backgroundColor: encre, padding: 10, cornerRadius: 10 } } }

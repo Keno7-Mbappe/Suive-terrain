@@ -43,6 +43,17 @@
     --warn-ink:    #9A5B05;
     --warn-bg:     #FEF1D6;
 
+    /* une couleur fixe par institution (DGFP/INAP/ANEFIP), distincte du vert/rouge
+       d'état et coordonnee avec l'orange de marque - pour les differencier d'un
+       coup d'oeil partout (badges, graphiques) sans jamais changer selon le tri
+       ou le filtre affiche. */
+    --inst-dgfp:     var(--brand-ink);
+    --inst-dgfp-bg:  var(--peach-100);
+    --inst-inap:     #0F766E;
+    --inst-inap-bg:  #E1F5F2;
+    --inst-anefip:   #7C3AED;
+    --inst-anefip-bg: #F1E9FE;
+
     --radius-sm: 10px;
     --radius-md: 16px;
     --radius-lg: 22px;
@@ -310,6 +321,19 @@ a { color: inherit; }
 .badge-warning { background: var(--warn-bg); color: var(--warn-ink); }
 .badge-critical { background: var(--bad-bg); color: var(--bad-ink); }
 .badge-neutral { background: var(--surface-2); color: var(--ink-muted); border: 1px solid var(--border-strong); }
+.badge-institution {
+    background: var(--inst-color-bg, var(--surface-2)); color: var(--inst-color, var(--ink-muted));
+    border: 1px solid transparent;
+}
+.badge-institution::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.badge-institution[data-institution="dgfp"] { --inst-color: var(--inst-dgfp); --inst-color-bg: var(--inst-dgfp-bg); }
+.badge-institution[data-institution="inap"] { --inst-color: var(--inst-inap); --inst-color-bg: var(--inst-inap-bg); }
+.badge-institution[data-institution="anefip"] { --inst-color: var(--inst-anefip); --inst-color-bg: var(--inst-anefip-bg); }
+/* legende et graphique du tableau de bord : meme couleur fixe par institution,
+   peu importe l'ordre d'affichage (contrairement a une palette positionnelle). */
+.legende-liste.palette-institution li[data-institution="dgfp"] i { background: var(--inst-dgfp); }
+.legende-liste.palette-institution li[data-institution="inap"] i { background: var(--inst-inap); }
+.legende-liste.palette-institution li[data-institution="anefip"] i { background: var(--inst-anefip); }
 
 .row-b { display: grid; grid-template-columns: minmax(0, 4.4fr) minmax(0, 4.8fr) minmax(0, 3fr); gap: 12px; min-height: 0; }
 .row-c { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 12px; min-height: 0; }

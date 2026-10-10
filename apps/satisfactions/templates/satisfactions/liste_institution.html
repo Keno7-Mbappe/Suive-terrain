@@ -62,7 +62,7 @@
         <tbody>
             {% for s in satisfactions %}
             <tr>
-                <td>{{ s.institution }}</td>
+                <td><span class="badge badge-institution" data-institution="{{ s.institution.type }}">{{ s.institution }}</span></td>
                 <td>{{ s.cycle }}</td>
                 <td>{{ s.fonction_repondant|default:"-" }}</td>
                 <td>{{ s.note_qualite_donnees }}/5</td>

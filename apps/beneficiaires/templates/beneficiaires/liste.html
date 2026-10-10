@@ -97,7 +97,7 @@
                 <td>{{ b.get_region_display }}</td>
                 <td>{{ b.quartier|default:"-" }}</td>
                 <td>{{ b.niveau_etude|default:"-" }}</td>
-                <td>{{ b.institution }}</td>
+                <td><span class="badge badge-institution" data-institution="{{ b.institution.type }}">{{ b.institution }}</span></td>
                 <td>{{ b.telephone|default:"-" }}</td>
                 <td>{{ b.date_enregistrement }}</td>
                 <td>{{ b.get_statut_display }}</td>
