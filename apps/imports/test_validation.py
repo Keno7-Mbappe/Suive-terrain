@@ -19,6 +19,7 @@ from django.urls import reverse
 from apps.beneficiaires.models import Beneficiaire
 from apps.comptes.models import Profile
 from apps.formations.models import Formation
+from apps.insertions.models import Insertion
 from apps.referentiels.models import CycleEnquete, Institution
 from apps.satisfactions.models import SatisfactionInstitution
 from apps.suivis.models import Suivi
@@ -228,6 +229,63 @@ class FluxDeValidationTests(TestCase):
         self.assertEqual(reponse.fonction_repondant, "Directeur")
         self.assertEqual(reponse.note_globale, 4.0)
 
+    # --- insertion (dérivée de la situation du module suivi) -----------------------
+
+    def test_valider_un_suivi_en_emploi_cree_aussi_une_insertion(self):
+        Formation.objects.create(
+            beneficiaire=self.beneficiaire, domaine="Informatique",
+            date_debut=date(2026, 1, 1), date_fin=date(2026, 6, 1),
+        )
+        soumission = self._soumission(donnees_suivi(
+            self.beneficiaire, **{
+                "module_suivi/situation": "emploi", "module_suivi/secteur": "banque",
+                "module_suivi/date_debut_activite": "2026-07-01",
+            },
+        ))
+        self.assertTrue(traiter_soumission(soumission))
+        insertion = Insertion.objects.get(beneficiaire=self.beneficiaire)
+        self.assertEqual(insertion.situation_prof, "emploi_salarie")
+        self.assertEqual(insertion.secteur_activite, "Banque et assurance")
+        self.assertEqual(insertion.date_insertion, date(2026, 7, 1))
+        self.assertEqual(insertion.delai_insertion_mois, 1)
+
+    def test_situation_en_recherche_cree_une_insertion_non_comptee_comme_insere(self):
+        soumission = self._soumission(donnees_suivi(self.beneficiaire, **{"module_suivi/situation": "recherche"}))
+        self.assertTrue(traiter_soumission(soumission))
+        insertion = Insertion.objects.get(beneficiaire=self.beneficiaire)
+        self.assertEqual(insertion.situation_prof, "en_recherche")
+
+    def test_situation_formation_ou_inactif_ne_cree_pas_dinsertion(self):
+        for i, situation in enumerate(("formation", "inactif")):
+            with self.subTest(situation=situation):
+                beneficiaire = Beneficiaire.objects.create(
+                    nom=f"Test{situation}", prenom="X", sexe="F", date_naissance=date(2000, 1, 1),
+                    region="djibouti", institution=self.eftp,
+                )
+                soumission = self._soumission(
+                    donnees_suivi(beneficiaire, **{"module_suivi/situation": situation}),
+                    kobo_submission_id=f"formation-ou-inactif-{i}",
+                )
+                self.assertTrue(traiter_soumission(soumission))
+                self.assertFalse(Insertion.objects.filter(beneficiaire=beneficiaire).exists())
+
+    def test_un_changement_de_situation_garde_lhistorique_des_insertions(self):
+        # D'abord en recherche (M+3), puis en emploi (M+6) : deux fiches distinctes,
+        # pas un simple ecrasement, pour garder la trace du parcours.
+        soumission1 = self._soumission(donnees_suivi(
+            self.beneficiaire, **{"module_suivi/vague": "m3", "module_suivi/situation": "recherche"}
+        ))
+        self.assertTrue(traiter_soumission(soumission1))
+        soumission2 = self._soumission(
+            donnees_suivi(self.beneficiaire, **{"module_suivi/vague": "m6", "module_suivi/situation": "emploi"}),
+            kobo_submission_id="2",
+        )
+        self.assertTrue(traiter_soumission(soumission2))
+        self.assertEqual(
+            set(Insertion.objects.filter(beneficiaire=self.beneficiaire).values_list("situation_prof", flat=True)),
+            {"en_recherche", "emploi_salarie"},
+        )
+
     # --- suppression ---------------------------------------------------------------
 
     def test_supprimer_une_soumission_a_valider(self):
@@ -237,11 +295,18 @@ class FluxDeValidationTests(TestCase):
         self.assertRedirects(response, reverse("imports:liste"))
         self.assertFalse(KoboSoumission.objects.filter(pk=soumission.pk).exists())
 
-    def test_une_soumission_integree_ne_peut_pas_etre_supprimee(self):
+    def test_une_soumission_integree_peut_aussi_etre_supprimee(self):
+        # La soumission (trace de l'envoi Kobo) est distincte des données qu'elle a
+        # créées (suivi, satisfaction, insertion) : la supprimer ne doit pas échouer,
+        # et ne supprime pas ces données.
         soumission = self._soumission(statut="integre")
+        self.assertTrue(traiter_soumission(soumission))
+        self.assertTrue(Suivi.objects.filter(beneficiaire=self.beneficiaire).exists())
         self.client.force_login(self.validateur)
-        self.client.post(reverse("imports:supprimer", args=[soumission.pk]))
-        self.assertTrue(KoboSoumission.objects.filter(pk=soumission.pk).exists())
+        response = self.client.post(reverse("imports:supprimer", args=[soumission.pk]))
+        self.assertRedirects(response, reverse("imports:liste"))
+        self.assertFalse(KoboSoumission.objects.filter(pk=soumission.pk).exists())
+        self.assertTrue(Suivi.objects.filter(beneficiaire=self.beneficiaire).exists())
 
     def test_seul_un_validateur_peut_agir(self):
         soumission = self._soumission()
@@ -304,6 +369,7 @@ class PublierBeneficiairesKoboTests(TestCase):
             self.assertEqual(beneficiaires[0]["name"], "B-2026-0001")
             self.assertEqual(beneficiaires[0]["nom_prenom"], "ABAS ABDILLAHI GUELLEH")
             self.assertEqual(beneficiaires[0]["date_fin_formation"], "2025-09-17")
+            self.assertEqual(beneficiaires[0]["domaine_formation"], "AGENT DE SECURITE")
             self.assertEqual(beneficiaires[0]["institution"], "ANEFIP")
             self.assertNotIn("ancien", str(beneficiaires))
 

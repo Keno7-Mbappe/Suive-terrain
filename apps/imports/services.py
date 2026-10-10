@@ -26,9 +26,10 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from apps.beneficiaires.models import Beneficiaire
+from apps.insertions.models import Insertion
 from apps.referentiels.models import CycleEnquete, Institution
 from apps.satisfactions.models import Satisfaction, SatisfactionInstitution
-from apps.suivis.models import Suivi
+from apps.suivis.models import SECTEURS, Suivi
 
 from .models import TYPES_FORMULAIRE, KoboSoumission
 from .schemas import TYPE_INSTITUTION_PAR_CODE
@@ -250,6 +251,13 @@ def _integrer_suivi(donnees):
     if _vers_bool_oui_non(donnees.get(KOBO_FIELDS_SATISFACTION["faire_satisfaction"])):
         _integrer_satisfaction(beneficiaire, donnees)
 
+    # La situation professionnelle ("module_suivi/situation") renseigne aussi
+    # l'insertion du bénéficiaire - pas de question séparée dans le formulaire,
+    # cf. _integrer_insertion.
+    situation = donnees.get(champs["situation_actuelle"])
+    if situation in SITUATION_VERS_INSERTION:
+        _integrer_insertion(beneficiaire, donnees)
+
 
 def _integrer_satisfaction(beneficiaire, donnees):
     champs = KOBO_FIELDS_SATISFACTION
@@ -272,6 +280,47 @@ def _integrer_satisfaction(beneficiaire, donnees):
             "raison_non_recommande": donnees.get(champs["raison_non_recommande"], "") or "",
             "points_positifs": donnees.get(champs["points_positifs"], "") or "",
             "points_a_ameliorer": donnees.get(champs["points_a_ameliorer"], "") or "",
+        },
+    )
+
+
+# Le formulaire ne pose pas une question "insertion" séparée : la situation
+# professionnelle du module suivi ("module_suivi/situation") sert aux deux -
+# "formation" (reparti en formation) et "inactif" ne sont pas une insertion.
+SITUATION_VERS_INSERTION = {
+    "emploi": "emploi_salarie",
+    "auto_emploi": "auto_emploi",
+    "stage": "stage",
+    "recherche": "en_recherche",
+}
+
+
+def _integrer_insertion(beneficiaire, donnees):
+    champs = KOBO_FIELDS_SUIVI
+    situation = donnees.get(champs["situation_actuelle"])
+    situation_prof = SITUATION_VERS_INSERTION[situation]
+    secteur_code = donnees.get(champs["secteur_activite"]) or ""
+    date_insertion = parse_date(donnees.get(champs["date_debut_activite"]) or "") or None
+
+    delai_insertion_mois = None
+    if date_insertion is not None:
+        derniere_formation = (
+            beneficiaire.formations.exclude(date_fin__isnull=True).order_by("-date_fin").first()
+        )
+        if derniere_formation is not None:
+            delta_mois = (
+                (date_insertion.year - derniere_formation.date_fin.year) * 12
+                + (date_insertion.month - derniere_formation.date_fin.month)
+            )
+            if delta_mois >= 0:
+                delai_insertion_mois = delta_mois
+
+    Insertion.objects.update_or_create(
+        beneficiaire=beneficiaire, situation_prof=situation_prof,
+        defaults={
+            "secteur_activite": dict(SECTEURS).get(secteur_code, secteur_code),
+            "date_insertion": date_insertion,
+            "delai_insertion_mois": delai_insertion_mois,
         },
     )
 

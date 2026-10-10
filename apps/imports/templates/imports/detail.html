@@ -28,7 +28,7 @@
             <button type="submit" class="secondary-button" {% if soumission.statut == "doublon" %}disabled{% endif %}>Écarter</button>
         </form>
         <form method="post" action="{% url 'imports:supprimer' soumission.pk %}" class="inline-form"
-              onsubmit="return confirm('Supprimer définitivement cette soumission ? Elle sera de nouveau téléchargée depuis Kobo à la prochaine synchronisation si elle y existe encore.');">
+              onsubmit="return confirm('{% if soumission.statut == "integre" %}Supprimer définitivement cette soumission ? Elle est déjà intégrée : les données créées (suivi, satisfaction, insertion) resteront dans la base, seule la soumission elle-même disparaît.{% else %}Supprimer définitivement cette soumission ? Elle sera de nouveau téléchargée depuis Kobo à la prochaine synchronisation si elle y existe encore.{% endif %}');">
             {% csrf_token %}
             <button type="submit" class="danger-button">Supprimer</button>
         </form>

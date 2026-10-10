@@ -3,10 +3,10 @@ format attendu par les questions `select_one_from_file` des formulaires
 KoboToolbox générés par `generate_kobo_xlsforms`.
 
 `beneficiaires.csv` a des colonnes au-delà de "name"/"label" (le minimum requis
-par XLSForm) : nom_prenom/institution/region/date_fin_formation/telephone,
-exploitées par des questions "calculate" du formulaire pour afficher un
-récapitulatif du bénéficiaire dès sa sélection, sans que l'enquêteur n'ait
-rien à ressaisir.
+par XLSForm) : nom_prenom/institution/region/domaine_formation/
+date_fin_formation/telephone, exploitées par des questions "calculate" du
+formulaire pour afficher un récapitulatif du bénéficiaire dès sa sélection,
+sans que l'enquêteur n'ait rien à ressaisir.
 
 Les cycles d'enquête ne sont plus exportés en CSV externe : le formulaire les
 encode directement (cycle_1/cycle_2/cycle_3), ce qui évite toute dépendance
@@ -43,7 +43,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Fichiers écrits dans {dossier_sortie}"))
 
     def _ecrire_beneficiaires(self, dossier_sortie):
-        entetes = ["name", "label", "nom_prenom", "institution", "region", "date_fin_formation", "telephone"]
+        entetes = [
+            "name", "label", "nom_prenom", "institution", "region",
+            "domaine_formation", "date_fin_formation", "telephone",
+        ]
         lignes = [tuple(ligne[e] for e in entetes) for ligne in lignes_beneficiaires()]
         self._ecrire_csv(dossier_sortie, "beneficiaires.csv", entetes, lignes)
 

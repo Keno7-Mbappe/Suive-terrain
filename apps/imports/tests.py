@@ -52,6 +52,7 @@ class ExportKoboChoicesTests(TestCase):
                 self.assertEqual(lignes[0]["nom_prenom"], "Amina Ali")
                 self.assertEqual(lignes[0]["institution"], "DGFP")
                 self.assertEqual(lignes[0]["date_fin_formation"], "2026-06-30")
+                self.assertEqual(lignes[0]["domaine_formation"], "Informatique")
                 self.assertEqual(lignes[0]["telephone"], "77000000")
 
                 with open(dossier / "institutions.csv", encoding="utf-8") as f:

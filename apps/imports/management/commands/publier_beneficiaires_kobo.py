@@ -55,7 +55,10 @@ class Command(BaseCommand):
                 "list_name": LISTE_BENEFICIAIRES,
                 "name": ligne["name"],
                 "label": [ligne["label"]],
-                **{cle: ligne[cle] for cle in ("nom_prenom", "institution", "region", "date_fin_formation", "telephone")},
+                **{
+                    cle: ligne[cle]
+                    for cle in ("nom_prenom", "institution", "region", "domaine_formation", "date_fin_formation", "telephone")
+                },
             }
             for ligne in lignes
         ]

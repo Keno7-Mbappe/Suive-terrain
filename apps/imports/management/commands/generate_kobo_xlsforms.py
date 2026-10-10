@@ -106,6 +106,7 @@ def _formulaire_suivi_et_satisfaction():
         {"type": "calculate", "name": "nom_prenom", "calculation": _calcul_beneficiaire("nom_prenom")},
         {"type": "calculate", "name": "institution", "calculation": _calcul_beneficiaire("institution")},
         {"type": "calculate", "name": "region", "calculation": _calcul_beneficiaire("region")},
+        {"type": "calculate", "name": "domaine_formation", "calculation": _calcul_beneficiaire("domaine_formation")},
         {"type": "calculate", "name": "date_fin_formation", "calculation": _calcul_beneficiaire("date_fin_formation")},
         {"type": "calculate", "name": "telephone", "calculation": _calcul_beneficiaire("telephone")},
         {"type": "calculate", "name": "mois_ecoules",
@@ -113,6 +114,7 @@ def _formulaire_suivi_et_satisfaction():
                          "int((today() - date(${date_fin_formation})) div 30.4), '')"},
         {"type": "note", "name": "recapitulatif",
          "label": "Bénéficiaire : ${nom_prenom} — ${institution} — ${region}\n"
+                   "Formation suivie : ${domaine_formation}\n"
                    "Fin de formation : ${date_fin_formation} — ${mois_ecoules} mois écoulés\n"
                    "Téléphone : ${telephone}",
          "relevant": "${id_beneficiaire} != ''"},

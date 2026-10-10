@@ -159,16 +159,17 @@ class SoumissionValiderView(SoumissionScopeeMixin, View):
 class SoumissionSupprimerView(SoumissionScopeeMixin, View):
     def post(self, request, pk):
         soumission = self.get_soumission(pk)
-        if soumission.statut == "integre":
-            messages.error(
-                request,
-                "Une soumission déjà intégrée ne peut pas être supprimée : les données qu'elle a créées "
-                "sont dans la base. Corrigez-la puis validez-la à nouveau si nécessaire.",
-            )
-            return redirect("imports:detail", pk=soumission.pk)
         reference = str(soumission)
+        etait_integree = soumission.statut == "integre"
         soumission.delete()
-        messages.success(request, f"{reference} supprimée.")
+        if etait_integree:
+            messages.success(
+                request,
+                f"{reference} supprimée. Les données déjà créées dans la base (suivi, satisfaction, insertion) "
+                "n'ont pas été touchées - supprimez-les séparément si besoin.",
+            )
+        else:
+            messages.success(request, f"{reference} supprimée.")
         return redirect("imports:liste")
 
 
