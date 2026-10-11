@@ -147,7 +147,8 @@ a { color: inherit; }
 .user-chip { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: var(--peach-50); border: 1px solid var(--border); }
 .user-avatar {
     width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    background: var(--peach-200); color: var(--brand-ink); font-weight: 800; font-size: 14px; text-transform: uppercase;
+    background: linear-gradient(145deg, var(--brand-400), var(--brand-600)); color: #fff; font-weight: 800; font-size: 14px;
+    text-transform: uppercase; box-shadow: 0 4px 10px -4px rgba(238,106,0,.65);
 }
 .user-info { min-width: 0; line-height: 1.25; }
 .user-info strong { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
