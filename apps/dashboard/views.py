@@ -300,7 +300,16 @@ def _contexte_dashboard(request):
     if contexte is None:
         contexte = _calculer_contexte(cycle_id, institution_id, domaine)
         cache.set(cle_cache, contexte, DUREE_CACHE_SECONDES)
-    return {**contexte, "filtre_cycle": cycle_id, "filtre_institution": institution_id, "filtre_domaine": domaine}
+    # Code d'institution (dgfp/inap/anefip) de l'institution filtrée, pour recolorer tout
+    # le tableau de bord à sa couleur dédiée quand une seule institution est affichée
+    # (cf. les couleurs fixes par institution des badges/légendes).
+    theme_institution = (
+        Institution.objects.filter(pk=institution_id).values_list("type", flat=True).first() if institution_id else ""
+    )
+    return {
+        **contexte, "filtre_cycle": cycle_id, "filtre_institution": institution_id, "filtre_domaine": domaine,
+        "theme_institution": theme_institution or "",
+    }
 
 
 @login_required

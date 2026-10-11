@@ -271,6 +271,20 @@ a { color: inherit; }
     flex: 1; min-height: 0; display: grid; gap: 12px;
     grid-template-rows: auto auto minmax(0, 1.28fr) minmax(0, 1fr);
 }
+/* Quand le tableau de bord est filtre sur une seule institution, toute sa
+   palette de marque (KPI, graphiques, jauge, barres de progression...) bascule
+   sur la couleur dediee a cette institution - DGFP garde l'orange par defaut,
+   pas de surcharge necessaire. Les variables redefinies sont celles deja
+   utilisees partout dans le reste de la feuille de style : aucune autre regle
+   n'a besoin d'etre dupliquee pour en beneficier. */
+.dash[data-theme-institution="inap"] {
+    --brand: #14B8A6; --brand-600: #0D9488; --brand-ink: #0F766E; --brand-400: #2DD4BF; --brand-300: #5EEAD4;
+    --peach-50: #F0FDFA; --peach-100: #CCFBF1; --peach-200: #99F6E4; --peach-300: #5EEAD4;
+}
+.dash[data-theme-institution="anefip"] {
+    --brand: #8B5CF6; --brand-600: #7C3AED; --brand-ink: #6D28D9; --brand-400: #A78BFA; --brand-300: #C4B5FD;
+    --peach-50: #F5F3FF; --peach-100: #EDE9FE; --peach-200: #DDD6FE; --peach-300: #C4B5FD;
+}
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .dash-head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; }
 .dash-head p { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-muted); }
@@ -444,11 +458,11 @@ a { color: inherit; }
 .age-bar { position: absolute; left: 12%; right: 12%; bottom: 0; height: max(var(--h, 0) * 1%, 4px); border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, var(--brand-400), var(--brand)); }
 
 /* palette des répartitions : orange plein, puis teintes de plus en plus claires */
-.palette > :nth-child(1) { --c: #FF7A00; }
-.palette > :nth-child(2) { --c: #FFA24D; }
-.palette > :nth-child(3) { --c: #FFC891; }
-.palette > :nth-child(4) { --c: #F4D9BF; }
-.palette > :nth-child(5) { --c: #D9C4AE; }
+.palette > :nth-child(1) { --c: var(--brand); }
+.palette > :nth-child(2) { --c: var(--brand-400); }
+.palette > :nth-child(3) { --c: var(--brand-300); }
+.palette > :nth-child(4) { --c: var(--peach-200); }
+.palette > :nth-child(5) { --c: var(--peach-100); }
 
 /* barre segmentée (situation professionnelle) */
 .segments { display: flex; gap: 3px; height: 38px; margin-bottom: 4px; }

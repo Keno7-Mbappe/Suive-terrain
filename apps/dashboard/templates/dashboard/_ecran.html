@@ -1,5 +1,5 @@
 {% load static %}
-<div class="dash">
+<div class="dash" data-theme-institution="{{ theme_institution }}">
 
     <div class="dash-head">
         <div>
@@ -132,9 +132,9 @@
                 {% if nb_repondants %}
                 <div class="gauge">
                     <svg viewBox="0 0 200 112" aria-hidden="true">
-                        <path d="M14 100 A86 86 0 0 1 186 100" fill="none" stroke="#FFEEDD" stroke-width="16" stroke-linecap="round" pathLength="100"/>
+                        <path d="M14 100 A86 86 0 0 1 186 100" fill="none" style="stroke: var(--peach-100)" stroke-width="16" stroke-linecap="round" pathLength="100"/>
                         <path class="gauge-valeur" d="M14 100 A86 86 0 0 1 186 100" fill="none" stroke="url(#jauge-degrade)" stroke-width="16" stroke-linecap="round" pathLength="100" style="--pct: {{ satisfaction_pct|stringformat:'.1f' }}"/>
-                        <defs><linearGradient id="jauge-degrade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFB673"/><stop offset="1" stop-color="#FF7A00"/></linearGradient></defs>
+                        <defs><linearGradient id="jauge-degrade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color: var(--brand-300)"/><stop offset="1" style="stop-color: var(--brand)"/></linearGradient></defs>
                     </svg>
                     <div class="gauge-centre"><strong data-compte="{{ satisfaction_globale|stringformat:'.1f' }}" data-decimales="1">{{ satisfaction_globale|floatformat:"1" }}</strong><span>/ 5</span><small data-compte="{{ satisfaction_pct|stringformat:'.1f' }}" data-suffixe=" % de satisfaits">{{ satisfaction_pct|floatformat:"0" }} % de satisfaits</small></div>
                 </div>
@@ -279,9 +279,17 @@
 <script>
 (function () {
     var donnees = JSON.parse(document.getElementById("donnees-graphiques").textContent);
-    var css = getComputedStyle(document.documentElement);
+    // Lu sur .dash (pas document.documentElement) : la couleur de marque y est
+    // reecrite selon l'institution filtree (cf. [data-theme-institution] plus bas),
+    // les graphiques doivent suivre cette meme teinte.
+    var css = getComputedStyle(document.querySelector(".dash") || document.documentElement);
     function couleur(nom) { return css.getPropertyValue(nom).trim(); }
-    var marque = couleur("--brand"), pale = "#F2A15E", encre = couleur("--ink"), muet = couleur("--ink-muted");
+    function rgba(hex, alpha) {
+        var h = hex.replace("#", "");
+        var r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+        return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+    }
+    var marque = couleur("--brand"), pale = couleur("--brand-300"), encre = couleur("--ink"), muet = couleur("--ink-muted");
     var palette = ["#FF7A00", "#FFA24D", "#FFC891", "#F4D9BF", "#D9C4AE"];
     // Couleur fixe par institution (DGFP/INAP/ANEFIP), pas par position : la
     // meme institution garde toujours la meme couleur, quel que soit l'ordre
@@ -309,8 +317,8 @@
     } else {
         var ctx = canvasEvo.getContext("2d");
         var degrade = ctx.createLinearGradient(0, 0, 0, canvasEvo.parentElement.clientHeight || 220);
-        degrade.addColorStop(0, "rgba(255,122,0,.26)");
-        degrade.addColorStop(1, "rgba(255,122,0,0)");
+        degrade.addColorStop(0, rgba(marque, .26));
+        degrade.addColorStop(1, rgba(marque, 0));
         new Chart(canvasEvo, {
             type: "line",
             data: {
