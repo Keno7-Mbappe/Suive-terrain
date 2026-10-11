@@ -9,7 +9,7 @@
     /* surfaces */
     --canvas:      #F3E7D4;
     --sidebar:     #FFFDFB;
-    --surface:     #FFFFFF;
+    --surface:     #FFFAF2;
     --surface-2:   #FBF8F4;
     --border:      #F0E8DD;
     --border-strong: #E6DACB;
@@ -79,7 +79,15 @@ img, svg, canvas { max-width: 100%; }
 
 body {
     margin: 0; min-height: 100vh;
-    font-family: var(--font); background: var(--canvas); color: var(--ink); line-height: 1.5;
+    font-family: var(--font); color: var(--ink); line-height: 1.5;
+    /* l'orange se fond dans le beige plutôt que de s'y juxtaposer : des halos doux
+       répartis sur toute la page, sur le même canevas, au lieu d'un aplat uniforme. */
+    background:
+        radial-gradient(1100px 620px at 12% -8%, rgba(255,138,41,.20), transparent 60%),
+        radial-gradient(900px 540px at 103% 4%, rgba(255,199,147,.30), transparent 55%),
+        radial-gradient(1000px 600px at 50% 115%, rgba(255,170,90,.16), transparent 60%),
+        var(--canvas);
+    background-attachment: fixed;
     -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 h1, h2, h3, .kpi-value, .brand-name, .login-wrapper h1 { font-family: var(--font-display); }
@@ -308,7 +316,7 @@ a { color: inherit; }
 .kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .kpi {
     position: relative; padding: 13px 16px 12px; border-radius: 16px; background: var(--surface);
-    border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.8);
     transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out), border-color .25s var(--ease-out);
 }
 .kpi:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--peach-300); }
@@ -319,15 +327,15 @@ a { color: inherit; }
 .kpi-label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
 .kpi-icon {
     width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-    background: var(--peach-100); color: var(--brand-600); flex-shrink: 0;
+    background: linear-gradient(145deg, var(--peach-100), var(--peach-200)); color: var(--brand-600); flex-shrink: 0;
 }
-.kpi-accent .kpi-icon { background: var(--brand); color: #fff; box-shadow: 0 5px 12px -5px rgba(238,106,0,.8); }
+.kpi-accent .kpi-icon { background: linear-gradient(145deg, var(--brand-400), var(--brand-600)); color: #fff; box-shadow: 0 5px 12px -5px rgba(238,106,0,.8); }
 .kpi-icon svg { width: 16px; height: 16px; }
 .kpi-value { margin-top: 6px; font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .kpi-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
 .kpi-sub { color: var(--ink-muted); font-size: 11.5px; line-height: 1.25; }
 .badge {
-    display: inline-flex; align-items: center; gap: 4px; border-radius: 7px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 2px 9px;
     font-size: 11.5px; font-weight: 700; background: var(--good-bg); color: var(--good-ink); white-space: nowrap;
 }
 .badge-neutre { background: var(--peach-100); color: var(--brand-ink); }
@@ -354,7 +362,8 @@ a { color: inherit; }
 
 .card {
     display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 14px 16px 14px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.8);
     transition: transform .25s var(--ease-out), box-shadow .25s var(--ease-out), border-color .25s var(--ease-out);
 }
 .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--peach-200); }
