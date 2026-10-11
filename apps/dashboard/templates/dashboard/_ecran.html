@@ -102,7 +102,7 @@
                     <span class="step-label">{{ etape.libelle }}</span>
                     <span class="step-value" data-compte="{{ etape.valeur }}">{{ etape.valeur }}</span>
                     <span class="step-conv">{% if etape.conversion is not None %}<span class="badge {% if etape.conversion < 50 %}badge-warning{% endif %}" title="{{ etape.conversion|floatformat:'0' }} % des personnes de l'étape précédente">&darr; <span data-compte="{{ etape.conversion|stringformat:'.1f' }}" data-suffixe=" %">{{ etape.conversion|floatformat:"0" }} %</span></span>{% else %}<span class="badge badge-neutre">100 %</span>{% endif %}</span>
-                    <div class="step-zone"><div class="step-bar" style="--h: {{ etape.hauteur|stringformat:'d' }}">{% for seg in etape.segments %}<i class="step-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
+                    <div class="step-zone"><div class="step-bar" style="--h: {{ etape.hauteur|stringformat:'d' }}">{% for seg in etape.segments %}<i class="step-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
                 </div>
                 {% endfor %}
             </div>
@@ -171,7 +171,7 @@
                     {% for r in regions %}
                     <li style="--i: {{ forloop.counter0 }}">
                         <div class="ligne"><span>{{ r.libelle }}</span><b data-compte="{{ r.valeur }}">{{ r.valeur }}</b></div>
-                        <div class="piste"><i style="--p: {{ r.pct|stringformat:'.1f' }}">{% for seg in r.segments %}<em class="piste-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
+                        <div class="piste"><i style="--p: {{ r.pct|stringformat:'.1f' }}">{% for seg in r.segments %}<em class="piste-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -206,7 +206,7 @@
                 </div>
                 <div class="ages">
                     {% for a in ages %}
-                    <div class="age" style="--i: {{ forloop.counter0 }}"><b data-compte="{{ a.valeur }}">{{ a.valeur }}</b><div class="age-zone"><div class="age-bar" style="--h: {{ a.hauteur|stringformat:'d' }}"></div></div><span>{{ a.libelle }}</span></div>
+                    <div class="age" style="--i: {{ forloop.counter0 }}"><b data-compte="{{ a.valeur }}">{{ a.valeur }}</b><div class="age-zone"><div class="age-bar" style="--h: {{ a.hauteur|stringformat:'d' }}">{% for seg in a.segments %}<i class="age-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div><span>{{ a.libelle }}</span></div>
                     {% endfor %}
                 </div>
                 {% else %}<div class="vide"><strong>Aucune donnée</strong></div>{% endif %}
@@ -221,7 +221,7 @@
                     {% for d in domaines %}
                     <li style="--i: {{ forloop.counter0 }}">
                         <div class="ligne"><span>{{ d.libelle }}</span><b data-compte="{{ d.valeur }}">{{ d.valeur }}</b></div>
-                        <div class="piste"><i style="--p: {{ d.pct|stringformat:'.1f' }}">{% for seg in d.segments %}<em class="piste-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
+                        <div class="piste"><i style="--p: {{ d.pct|stringformat:'.1f' }}">{% for seg in d.segments %}<em class="piste-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -253,15 +253,15 @@
             <div class="card-body">
                 <div class="meter">
                     <div class="meter-top"><span>Bénéficiaires joignables</span><b data-compte="{{ taux_completude|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_completude|floatformat:"0" }} %</b></div>
-                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_completude|stringformat:'.1f' }}%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_completude|stringformat:'.1f' }}%">{% for seg in segments_completude %}<i class="meter-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
                 </div>
                 <div class="meter">
                     <div class="meter-top"><span>Bénéficiaires suivis</span><b data-compte="{{ taux_suivi|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_suivi|floatformat:"0" }} %</b></div>
-                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_suivi|stringformat:'.1f' }}%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_suivi|stringformat:'.1f' }}%">{% for seg in segments_suivi %}<i class="meter-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
                 </div>
                 <div class="meter">
                     <div class="meter-top"><span>Kobo validées</span><b data-compte="{{ taux_validation_kobo|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_validation_kobo|floatformat:"0" }} %</b></div>
-                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_validation_kobo|stringformat:'.1f' }}%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" style="width: {{ taux_validation_kobo|stringformat:'.1f' }}%">{% for seg in segments_validation_kobo %}<i class="meter-seg seg-inst" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
                 </div>
                 <div class="mini-stats">
                     <div style="--i: 0"><strong data-compte="{{ nb_doublons_potentiels }}">{{ nb_doublons_potentiels }}</strong><span>Doublons</span></div>

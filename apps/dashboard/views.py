@@ -176,6 +176,23 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         en_erreur=Count("id", filter=Q(statut="erreur")),
     )
 
+    # Répartition par institution de chaque indicateur "Qualité des données" (parmi les
+    # joignables/suivis/validées, quelles institutions) — mêmes barres empilées que
+    # le parcours, inutile si un filtre institution est déjà actif.
+    joignables_par_institution, suivis_par_institution, kobo_valides_par_institution = {}, {}, {}
+    if not institution_id:
+        for r in beneficiaires.exclude(telephone="").values("institution__type").annotate(total=Count("id_beneficiaire")):
+            joignables_par_institution[r["institution__type"]] = r["total"]
+        for r in (
+            Suivi.objects.filter(beneficiaire__in=beneficiaires)
+            .values("beneficiaire__institution__type").annotate(total=Count("beneficiaire", distinct=True))
+        ):
+            suivis_par_institution[r["beneficiaire__institution__type"]] = r["total"]
+        for r in (
+            KoboSoumission.objects.filter(statut="integre").values("institution__type").annotate(total=Count("id"))
+        ):
+            kobo_valides_par_institution[r["institution__type"]] = r["total"]
+
     # --- répartitions --------------------------------------------------------------
     regions = beneficiaires.values("region").annotate(total=Count("id_beneficiaire")).order_by("-total")
     par_institution = (
@@ -192,17 +209,20 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
     # Répartition par institution de chaque région/domaine, pour des barres empilées
     # (vue "toutes institutions") — inutile si un filtre institution est déjà actif
     # (une seule institution possible : une requête de plus pour rien).
-    regions_par_institution, domaines_par_institution = {}, {}
+    regions_par_institution, domaines_par_institution, ages_par_institution = {}, {}, {}
     if not institution_id:
         for r in beneficiaires.values("region", "institution__type").annotate(total=Count("id_beneficiaire")):
             regions_par_institution.setdefault(r["region"], {})[r["institution__type"]] = r["total"]
         for r in formations.values("domaine", "beneficiaire__institution__type").annotate(total=Count("id")):
             domaines_par_institution.setdefault(r["domaine"], {})[r["beneficiaire__institution__type"]] = r["total"]
+        for r in beneficiaires.values("tranche_age", "institution__type").annotate(total=Count("id_beneficiaire")):
+            ages_par_institution.setdefault(r["tranche_age"], {})[r["institution__type"]] = r["total"]
 
     liste_ages = [{"libelle": t, "valeur": ages.get(t, 0)} for t in ORDRE_TRANCHES_AGE]
     max_age = max(a["valeur"] for a in liste_ages)
     for a in liste_ages:
         a["hauteur"] = round(a["valeur"] / max_age * 100) if max_age else 0
+        a["segments"] = _segments_institution(ages_par_institution.get(a["libelle"], {}), a["valeur"])
 
     # --- évolution par cycle : un cycle qui n'a pas commencé n'a pas encore de résultat ---
     aujourd_hui = date.today()
@@ -317,11 +337,14 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         # Le suivi se fait par téléphone : la complétude qui compte est la joignabilité,
         # l'e-mail n'est pas collecté dans les listes sources des institutions.
         "taux_completude": _taux(profil["avec_telephone"], total_beneficiaires),
+        "segments_completude": _segments_institution(joignables_par_institution, profil["avec_telephone"]),
+        "segments_suivi": _segments_institution(suivis_par_institution, total_suivis),
         "nb_soumissions_kobo": kobo["total"],
         "nb_soumissions_a_valider": kobo["a_valider"],
         "nb_soumissions_erreur": kobo["en_erreur"],
         "nb_soumissions_a_traiter": kobo["a_valider"] + kobo["en_erreur"],
         "taux_validation_kobo": _taux(kobo["integrees"], kobo["total"]),
+        "segments_validation_kobo": _segments_institution(kobo_valides_par_institution, kobo["integrees"]),
         "nb_reponses_institution": notes_institution["nb"],
         "satisfaction_institution_globale": satisfaction_institution,
         "satisfaction_institution_pct": round(satisfaction_institution / 5 * 100, 1) if satisfaction_institution else 0,
