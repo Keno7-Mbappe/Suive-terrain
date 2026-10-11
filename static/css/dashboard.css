@@ -368,6 +368,12 @@ a { color: inherit; }
 }
 .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--peach-200); }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.card-head-titre { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.card-icon {
+    width: 26px; height: 26px; margin-top: 1px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(145deg, var(--peach-100), var(--peach-200)); color: var(--brand-600); flex-shrink: 0;
+}
+.card-icon svg { width: 14px; height: 14px; }
 .card-title { margin: 0; font-size: 15px; font-weight: 750; letter-spacing: -0.01em; line-height: 1.2; }
 .card-sub { margin: 2px 0 0; font-size: 11.5px; color: var(--ink-muted); }
 .card-body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
@@ -386,7 +392,10 @@ a { color: inherit; }
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
     text-align: center; padding: 0 12%; font-size: 12.5px; color: var(--ink-muted); line-height: 1.4;
 }
-.card-body > .vide svg, .chart-box > .vide svg { width: 30px; height: 30px; stroke: var(--peach-300); }
+.card-body > .vide svg, .chart-box > .vide svg {
+    width: 22px; height: 22px; padding: 11px; box-sizing: content-box; border-radius: 999px;
+    background: linear-gradient(145deg, var(--peach-50), var(--peach-100)); stroke: var(--brand-400);
+}
 .card-body > .vide strong, .chart-box > .vide strong { color: var(--ink-2); font-weight: 650; }
 
 /* parcours : colonnes en escalier (inscrits -> formés -> certifiés -> insérés) */
