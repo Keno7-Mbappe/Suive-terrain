@@ -16,6 +16,7 @@ from apps.satisfactions.models import Satisfaction, SatisfactionInstitution
 from apps.suivis.models import Suivi
 
 ORDRE_TRANCHES_AGE = ["<20", "20-30", "31-40", "41-50", ">50"]
+CODES_INSTITUTIONS = ["dgfp", "inap", "anefip"]
 DIMENSIONS = ["note_formation", "note_formateurs", "note_contenus", "note_equipements", "note_accueil"]
 LIBELLES_DIMENSIONS = ["Formation", "Formateurs", "Contenus", "Équipements", "Accueil"]
 DIMENSIONS_INSTITUTION = [
@@ -30,12 +31,15 @@ def _taux(numerateur, denominateur):
     return round(numerateur / denominateur * 100, 1) if denominateur else 0
 
 
-def _liste_repartition(lignes, cle, total, libelles=None, limite=None, code_field=None):
+def _liste_repartition(lignes, cle, total, libelles=None, limite=None, code_field=None, segments_par_cle=None):
     """Transforme des lignes {cle: code, "total": n} en éléments d'affichage
     [{libelle, valeur, pct}] où pct est la part du total (barres de progression).
     `code_field`, s'il est donné, ajoute un champ "code" stable (ex. type
     d'institution) utilisable pour un style qui ne dépend pas de l'ordre
-    d'affichage (cf. couleur fixe par institution)."""
+    d'affichage (cf. couleur fixe par institution). `segments_par_cle`, s'il est
+    donné, ajoute la répartition par institution de CHAQUE ligne (ex. quelles
+    institutions composent telle région), pour des barres empilées en vue
+    "toutes institutions" plutôt qu'un aplat orange."""
     libelles = libelles or {}
     lignes = list(lignes)[:limite] if limite else list(lignes)
     return [
@@ -44,8 +48,28 @@ def _liste_repartition(lignes, cle, total, libelles=None, limite=None, code_fiel
             "valeur": ligne["total"],
             "pct": _taux(ligne["total"], total),
             **({"code": ligne[code_field]} if code_field else {}),
+            **(
+                {"segments": _segments_institution(segments_par_cle.get(ligne[cle], {}), ligne["total"])}
+                if segments_par_cle is not None
+                else {}
+            ),
         }
         for ligne in lignes
+    ]
+
+
+def _segments_institution(repartition, total):
+    """Découpe un total en segments par institution (pour les barres empilées du
+    parcours, sur la vue non filtrée) : une couleur par institution, proportionnelle
+    à sa part. Vide si une seule institution est représentée (filtre actif) ou
+    si le total est nul, pour ne pas superposer un segment inutile sur la couleur
+    thématique déjà appliquée par `.dash[data-theme-institution]`."""
+    if not total or len(repartition) < 2:
+        return []
+    return [
+        {"code": code, "pct": _taux(repartition[code], total)}
+        for code in CODES_INSTITUTIONS
+        if repartition.get(code)
     ]
 
 
@@ -165,6 +189,16 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
     domaines = formations.values("domaine").annotate(total=Count("id")).order_by("-total")
     situations = list(insertions.values("situation_prof").annotate(total=Count("id")).order_by("-total"))
 
+    # Répartition par institution de chaque région/domaine, pour des barres empilées
+    # (vue "toutes institutions") — inutile si un filtre institution est déjà actif
+    # (une seule institution possible : une requête de plus pour rien).
+    regions_par_institution, domaines_par_institution = {}, {}
+    if not institution_id:
+        for r in beneficiaires.values("region", "institution__type").annotate(total=Count("id_beneficiaire")):
+            regions_par_institution.setdefault(r["region"], {})[r["institution__type"]] = r["total"]
+        for r in formations.values("domaine", "beneficiaire__institution__type").annotate(total=Count("id")):
+            domaines_par_institution.setdefault(r["domaine"], {})[r["beneficiaire__institution__type"]] = r["total"]
+
     liste_ages = [{"libelle": t, "valeur": ages.get(t, 0)} for t in ORDRE_TRANCHES_AGE]
     max_age = max(a["valeur"] for a in liste_ages)
     for a in liste_ages:
@@ -194,15 +228,42 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         evolution_satisfaction.append(round(note / 5 * 100, 1) if note else None)
 
     # --- parcours : taux de passage d'une étape à l'autre (là où se situe la déperdition) ---
+    # Répartition par institution de chaque étape, pour colorer les barres en segments
+    # (vue "toutes institutions") plutôt qu'en un seul aplat orange.
+    inscrits_par_institution = {r["institution__type"]: r["total"] for r in par_institution}
+    formes_par_institution = {
+        r["beneficiaire__institution__type"]: r["total"]
+        for r in formations.filter(statut_formation="achevee")
+        .values("beneficiaire__institution__type")
+        .annotate(total=Count("beneficiaire", distinct=True))
+    }
+    certifies_par_institution = {
+        r["beneficiaire__institution__type"]: r["total"]
+        for r in Certification.objects.filter(beneficiaire__in=beneficiaires)
+        .values("beneficiaire__institution__type")
+        .annotate(total=Count("beneficiaire", distinct=True))
+    }
+    inseres_par_institution = {
+        r["beneficiaire__institution__type"]: r["total"]
+        for r in insertions.exclude(situation_prof="en_recherche")
+        .values("beneficiaire__institution__type")
+        .annotate(total=Count("beneficiaire", distinct=True))
+    }
     etapes = [
-        ("Inscrits", total_beneficiaires, None),
-        ("Formés", total_formes, _taux(total_formes, total_beneficiaires)),
-        ("Certifiés", total_certifies, _taux(total_certifies, total_formes)),
-        ("Insérés", total_inseres, _taux(total_inseres, total_certifies)),
+        ("Inscrits", total_beneficiaires, None, inscrits_par_institution),
+        ("Formés", total_formes, _taux(total_formes, total_beneficiaires), formes_par_institution),
+        ("Certifiés", total_certifies, _taux(total_certifies, total_formes), certifies_par_institution),
+        ("Insérés", total_inseres, _taux(total_inseres, total_certifies), inseres_par_institution),
     ]
     tunnel = [
-        {"libelle": libelle, "valeur": valeur, "conversion": conversion, "hauteur": _taux(valeur, total_beneficiaires)}
-        for libelle, valeur, conversion in etapes
+        {
+            "libelle": libelle,
+            "valeur": valeur,
+            "conversion": conversion,
+            "hauteur": _taux(valeur, total_beneficiaires),
+            "segments": _segments_institution(repartition, valeur),
+        }
+        for libelle, valeur, conversion, repartition in etapes
     ]
 
     institutions_liste = _liste_repartition(
@@ -241,9 +302,13 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
             "pct_hommes": _taux(profil["hommes"], total_beneficiaires),
         },
         "ages": liste_ages,
-        "regions": _liste_repartition(regions, "region", total_beneficiaires, dict(REGIONS), limite=5),
+        "regions": _liste_repartition(
+            regions, "region", total_beneficiaires, dict(REGIONS), limite=5, segments_par_cle=regions_par_institution
+        ),
         "institutions_liste": institutions_liste,
-        "domaines": _liste_repartition(domaines, "domaine", stats_formations["total"], limite=5),
+        "domaines": _liste_repartition(
+            domaines, "domaine", stats_formations["total"], limite=5, segments_par_cle=domaines_par_institution
+        ),
         "situations": _liste_repartition(
             situations, "situation_prof", sum(s["total"] for s in situations), dict(SITUATIONS_PRO)
         ),

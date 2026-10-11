@@ -109,6 +109,30 @@ class DashboardViewsTests(TestCase):
         self.assertEqual(tunnel["Certifiés"]["conversion"], 100.0)
         self.assertEqual(response.context["sexe"]["femmes"], 1)
 
+    def test_parcours_regions_domaines_se_decoupent_par_institution_sans_filtre(self):
+        # Vue "toutes institutions" : les barres (parcours, régions, domaines) doivent
+        # se découper par institution (une couleur par institution) plutôt que de rester
+        # en un seul aplat orange — sauf quand un filtre institution est déjà actif (une
+        # seule institution possible, le découpage ne sert à rien).
+        anefip = Institution.objects.create(libelle="ANEFIP", type="anefip", region="djibouti")
+        dgfp_b = _beneficiaire(self.institution, nom="Dgfp1", region="djibouti")
+        anefip_b = _beneficiaire(anefip, nom="Anefip1", region="djibouti")
+        Formation.objects.create(beneficiaire=dgfp_b, domaine="Informatique", date_debut=date(2025, 1, 1))
+        Formation.objects.create(beneficiaire=anefip_b, domaine="Informatique", date_debut=date(2025, 1, 1))
+
+        sans_filtre = self.client.get(reverse("dashboard:public"))
+        tunnel = {etape["libelle"]: etape for etape in sans_filtre.context["tunnel"]}
+        self.assertEqual({s["code"] for s in tunnel["Inscrits"]["segments"]}, {"dgfp", "anefip"})
+        regions = {r["libelle"]: r for r in sans_filtre.context["regions"]}
+        self.assertEqual({s["code"] for s in regions["Djibouti"]["segments"]}, {"dgfp", "anefip"})
+        domaines = {d["libelle"]: d for d in sans_filtre.context["domaines"]}
+        self.assertEqual({s["code"] for s in domaines["Informatique"]["segments"]}, {"dgfp", "anefip"})
+
+        avec_filtre = self.client.get(reverse("dashboard:public"), {"institution": self.institution.pk})
+        tunnel_filtre = {etape["libelle"]: etape for etape in avec_filtre.context["tunnel"]}
+        self.assertEqual(tunnel_filtre["Inscrits"]["segments"], [])
+        self.assertEqual(avec_filtre.context["regions"][0]["segments"], [])
+
     def test_filtre_par_domaine_restreint_les_beneficiaires_et_liste_tous_les_domaines(self):
         # Avec plusieurs institutions, il y a trop de filières distinctes pour toutes
         # tenir dans la carte "Domaines" (top 5 affiché) : le menu déroulant doit lister

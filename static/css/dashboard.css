@@ -390,12 +390,19 @@ a { color: inherit; }
 .step-zone { position: relative; flex: 1; min-height: 34px; margin-top: 8px; }
 .step-bar {
     position: absolute; left: 0; right: 0; bottom: 0; height: max(var(--h, 0) * 1%, 5px); border-radius: 10px 10px 0 0;
-    background: var(--fill);
+    background: var(--fill); overflow: hidden; display: flex; flex-direction: column-reverse;
 }
 .step:nth-child(1) { --fill: var(--peach-200); }
 .step:nth-child(2) { --fill: var(--peach-300); }
 .step:nth-child(3) { --fill: var(--brand-400); }
 .step:nth-child(4) { --fill: var(--brand); }
+/* vue "toutes institutions" : la barre se découpe en segments par institution
+   (une par couleur d'identité) plutôt que de rester en un seul aplat orange ;
+   absent quand un filtre institution est actif (une seule couleur = inutile). */
+.step-seg { display: block; width: 100%; height: calc(var(--seg, 0) * 1%); }
+.step-seg[data-institution="dgfp"] { background: var(--inst-dgfp); }
+.step-seg[data-institution="inap"] { background: var(--inst-inap); }
+.step-seg[data-institution="anefip"] { background: var(--inst-anefip); }
 
 /* jauge en demi-cercle (satisfaction) */
 .gauge { position: relative; flex: 1 1 96px; min-height: 0; max-height: 170px; }
@@ -418,8 +425,14 @@ a { color: inherit; }
 .barres .ligne span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
 .barres .ligne b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .piste { height: 7px; margin-top: 4px; border-radius: 999px; background: var(--peach-100); overflow: hidden; }
-.piste i { display: block; height: 100%; width: calc(var(--p, 0) * 1%); min-width: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--brand-400), var(--brand)); }
+.piste i { display: flex; height: 100%; width: calc(var(--p, 0) * 1%); min-width: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--brand-400), var(--brand)); overflow: hidden; }
 .barres li:nth-child(n+3) .piste i { background: linear-gradient(90deg, var(--brand-300), var(--brand-400)); }
+/* vue "toutes institutions" : chaque barre se découpe par institution plutôt que de
+   rester en un seul aplat orange (absent si un filtre institution est actif). */
+.piste-seg { display: block; height: 100%; width: calc(var(--seg, 0) * 1%); }
+.piste-seg[data-institution="dgfp"] { background: var(--inst-dgfp); }
+.piste-seg[data-institution="inap"] { background: var(--inst-inap); }
+.piste-seg[data-institution="anefip"] { background: var(--inst-anefip); }
 
 /* notes par dimension : une ligne par critère (libellé, barre, valeur) */
 .notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; flex: 0 0 auto; }

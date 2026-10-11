@@ -102,7 +102,7 @@
                     <span class="step-label">{{ etape.libelle }}</span>
                     <span class="step-value" data-compte="{{ etape.valeur }}">{{ etape.valeur }}</span>
                     <span class="step-conv">{% if etape.conversion is not None %}<span class="badge {% if etape.conversion < 50 %}badge-warning{% endif %}" title="{{ etape.conversion|floatformat:'0' }} % des personnes de l'étape précédente">&darr; <span data-compte="{{ etape.conversion|stringformat:'.1f' }}" data-suffixe=" %">{{ etape.conversion|floatformat:"0" }} %</span></span>{% else %}<span class="badge badge-neutre">100 %</span>{% endif %}</span>
-                    <div class="step-zone"><div class="step-bar" style="--h: {{ etape.hauteur|stringformat:'d' }}"></div></div>
+                    <div class="step-zone"><div class="step-bar" style="--h: {{ etape.hauteur|stringformat:'d' }}">{% for seg in etape.segments %}<i class="step-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></i>{% endfor %}</div></div>
                 </div>
                 {% endfor %}
             </div>
@@ -171,7 +171,7 @@
                     {% for r in regions %}
                     <li style="--i: {{ forloop.counter0 }}">
                         <div class="ligne"><span>{{ r.libelle }}</span><b data-compte="{{ r.valeur }}">{{ r.valeur }}</b></div>
-                        <div class="piste"><i style="--p: {{ r.pct|stringformat:'.1f' }}"></i></div>
+                        <div class="piste"><i style="--p: {{ r.pct|stringformat:'.1f' }}">{% for seg in r.segments %}<em class="piste-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -221,7 +221,7 @@
                     {% for d in domaines %}
                     <li style="--i: {{ forloop.counter0 }}">
                         <div class="ligne"><span>{{ d.libelle }}</span><b data-compte="{{ d.valeur }}">{{ d.valeur }}</b></div>
-                        <div class="piste"><i style="--p: {{ d.pct|stringformat:'.1f' }}"></i></div>
+                        <div class="piste"><i style="--p: {{ d.pct|stringformat:'.1f' }}">{% for seg in d.segments %}<em class="piste-seg" data-institution="{{ seg.code }}" style="--seg: {{ seg.pct|stringformat:'.1f' }}"></em>{% endfor %}</i></div>
                     </li>
                     {% endfor %}
                 </ul>
