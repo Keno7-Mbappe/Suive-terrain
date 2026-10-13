@@ -295,18 +295,55 @@ class FluxDeValidationTests(TestCase):
         self.assertRedirects(response, reverse("imports:liste"))
         self.assertFalse(KoboSoumission.objects.filter(pk=soumission.pk).exists())
 
-    def test_une_soumission_integree_peut_aussi_etre_supprimee(self):
-        # La soumission (trace de l'envoi Kobo) est distincte des données qu'elle a
-        # créées (suivi, satisfaction, insertion) : la supprimer ne doit pas échouer,
-        # et ne supprime pas ces données.
-        soumission = self._soumission(statut="integre")
+    def test_une_soumission_integree_peut_etre_supprimee_avec_ce_quelle_a_cree(self):
+        # Supprimer une soumission déjà intégrée doit aussi supprimer ce qu'elle a
+        # créé dans la base (suivi, satisfaction, insertion) : rien ne doit rester
+        # sans trace de sa source.
+        from apps.satisfactions.models import Satisfaction
+
+        CycleEnquete.objects.create(libelle="Cycle 1", date_debut=date(2026, 11, 1), date_fin=date(2026, 11, 30))
+        soumission = self._soumission(donnees={
+            "selection/id_beneficiaire": self.beneficiaire.pk,
+            "selection/date_contact": "2026-12-01",
+            "issue_contact": "joint",
+            "module_suivi/vague": "m3",
+            "module_suivi/situation": "emploi",
+            "bascule/faire_satisfaction": "oui",
+            "bascule/cycle": "cycle_1",
+            "bascule/note_formation": 4, "bascule/note_formateurs": 5, "bascule/note_contenus": 4,
+            "bascule/note_equipements": 4, "bascule/note_conditions": 5,
+            "bascule/employabilite": "tout_a_fait", "bascule/recommande": "oui",
+        })
         self.assertTrue(traiter_soumission(soumission))
         self.assertTrue(Suivi.objects.filter(beneficiaire=self.beneficiaire).exists())
+        self.assertTrue(Satisfaction.objects.filter(beneficiaire=self.beneficiaire).exists())
+        self.assertTrue(Insertion.objects.filter(beneficiaire=self.beneficiaire).exists())
+
         self.client.force_login(self.validateur)
         response = self.client.post(reverse("imports:supprimer", args=[soumission.pk]))
         self.assertRedirects(response, reverse("imports:liste"))
         self.assertFalse(KoboSoumission.objects.filter(pk=soumission.pk).exists())
-        self.assertTrue(Suivi.objects.filter(beneficiaire=self.beneficiaire).exists())
+        self.assertFalse(Suivi.objects.filter(beneficiaire=self.beneficiaire).exists())
+        self.assertFalse(Satisfaction.objects.filter(beneficiaire=self.beneficiaire).exists())
+        self.assertFalse(Insertion.objects.filter(beneficiaire=self.beneficiaire).exists())
+
+    def test_supprimer_une_soumission_ne_touche_pas_ce_quune_autre_a_cree(self):
+        # Deux soumissions distinctes (deux vagues de suivi) pour le même
+        # bénéficiaire : supprimer l'une ne doit emporter que ses propres données.
+        soumission1 = self._soumission(
+            donnees_suivi(self.beneficiaire, **{"module_suivi/vague": "m3"}), kobo_submission_id="1",
+        )
+        soumission2 = self._soumission(
+            donnees_suivi(self.beneficiaire, **{"module_suivi/vague": "m6"}), kobo_submission_id="2",
+        )
+        self.assertTrue(traiter_soumission(soumission1))
+        self.assertTrue(traiter_soumission(soumission2))
+        self.assertEqual(Suivi.objects.filter(beneficiaire=self.beneficiaire).count(), 2)
+
+        self.client.force_login(self.validateur)
+        self.client.post(reverse("imports:supprimer", args=[soumission1.pk]))
+        self.assertFalse(Suivi.objects.filter(beneficiaire=self.beneficiaire, vague="m3").exists())
+        self.assertTrue(Suivi.objects.filter(beneficiaire=self.beneficiaire, vague="m6").exists())
 
     def test_seul_un_validateur_peut_agir(self):
         soumission = self._soumission()

@@ -39,6 +39,12 @@ class Satisfaction(models.Model):
     points_positifs = models.TextField("Points positifs", blank=True)
     points_a_ameliorer = models.TextField("Points à améliorer", blank=True)
 
+    # Cf. Suivi.soumission_kobo : supprimer la soumission supprime aussi cette ligne.
+    soumission_kobo = models.ForeignKey(
+        "imports.KoboSoumission", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="satisfactions_creees", editable=False,
+    )
+
     class Meta:
         unique_together = [("beneficiaire", "cycle")]
         ordering = ["-cycle__date_debut"]
@@ -81,6 +87,12 @@ class SatisfactionInstitution(models.Model):
     )
     difficultes = models.TextField("Difficultés rencontrées", blank=True)
     recommandations = models.TextField("Recommandations d'amélioration", blank=True)
+
+    # Cf. Suivi.soumission_kobo : supprimer la soumission supprime aussi cette ligne.
+    soumission_kobo = models.ForeignKey(
+        "imports.KoboSoumission", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="satisfactions_institution_creees", editable=False,
+    )
 
     class Meta:
         unique_together = [("institution", "cycle")]

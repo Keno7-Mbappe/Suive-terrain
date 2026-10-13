@@ -109,6 +109,14 @@ class Suivi(models.Model):
 
     obstacle_principal = models.TextField("Principal obstacle rencontré", blank=True)
 
+    # Soumission Kobo à l'origine de cette ligne (ou de sa dernière mise à jour) :
+    # la supprimer supprime aussi ce qu'elle a créé, plutôt que de laisser une
+    # donnée orpheline que plus personne ne peut rattacher à sa source.
+    soumission_kobo = models.ForeignKey(
+        "imports.KoboSoumission", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="suivis_crees", editable=False,
+    )
+
     class Meta:
         ordering = ["-date_suivi"]
         unique_together = [("beneficiaire", "vague")]

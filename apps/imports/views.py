@@ -160,13 +160,18 @@ class SoumissionSupprimerView(SoumissionScopeeMixin, View):
     def post(self, request, pk):
         soumission = self.get_soumission(pk)
         reference = str(soumission)
-        etait_integree = soumission.statut == "integre"
+        creees = {
+            "suivi": soumission.suivis_crees.count(),
+            "satisfaction": soumission.satisfactions_creees.count(),
+            "insertion": soumission.insertions_creees.count(),
+            "satisfaction institutionnelle": soumission.satisfactions_institution_creees.count(),
+        }
         soumission.delete()
-        if etait_integree:
+        libelles = [nom for nom, n in creees.items() if n]
+        if libelles:
             messages.success(
                 request,
-                f"{reference} supprimée. Les données déjà créées dans la base (suivi, satisfaction, insertion) "
-                "n'ont pas été touchées - supprimez-les séparément si besoin.",
+                f"{reference} supprimée, ainsi que ce qu'elle avait créé dans la base ({', '.join(libelles)}).",
             )
         else:
             messages.success(request, f"{reference} supprimée.")

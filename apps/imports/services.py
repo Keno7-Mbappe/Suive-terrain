@@ -209,7 +209,8 @@ def _get_beneficiaire(id_beneficiaire):
         return None
 
 
-def _integrer_suivi(donnees):
+def _integrer_suivi(soumission):
+    donnees = soumission.donnees_effectives
     champs = KOBO_FIELDS_SUIVI
     beneficiaire = _get_beneficiaire(donnees.get(champs["id_beneficiaire"]))
     if beneficiaire is None:
@@ -243,23 +244,24 @@ def _integrer_suivi(donnees):
             "duree_recherche_mois": int(duree_recherche) if duree_recherche not in (None, "") else None,
             "demarches": donnees.get(champs["demarches"], "") or "",
             "obstacle_principal": donnees.get(champs["obstacle_principal"], "") or "",
+            "soumission_kobo": soumission,
         },
     )
 
     # Le module satisfaction est optionnel et fait partie de la même soumission
     # (bascule/faire_satisfaction) : pas de deuxième formulaire Kobo à synchroniser.
     if _vers_bool_oui_non(donnees.get(KOBO_FIELDS_SATISFACTION["faire_satisfaction"])):
-        _integrer_satisfaction(beneficiaire, donnees)
+        _integrer_satisfaction(beneficiaire, donnees, soumission)
 
     # La situation professionnelle ("module_suivi/situation") renseigne aussi
     # l'insertion du bénéficiaire - pas de question séparée dans le formulaire,
     # cf. _integrer_insertion.
     situation = donnees.get(champs["situation_actuelle"])
     if situation in SITUATION_VERS_INSERTION:
-        _integrer_insertion(beneficiaire, donnees)
+        _integrer_insertion(beneficiaire, donnees, soumission)
 
 
-def _integrer_satisfaction(beneficiaire, donnees):
+def _integrer_satisfaction(beneficiaire, donnees, soumission):
     champs = KOBO_FIELDS_SATISFACTION
     code_cycle = donnees.get(champs["id_cycle"])
     cycle = _resoudre_cycle(code_cycle)
@@ -280,6 +282,7 @@ def _integrer_satisfaction(beneficiaire, donnees):
             "raison_non_recommande": donnees.get(champs["raison_non_recommande"], "") or "",
             "points_positifs": donnees.get(champs["points_positifs"], "") or "",
             "points_a_ameliorer": donnees.get(champs["points_a_ameliorer"], "") or "",
+            "soumission_kobo": soumission,
         },
     )
 
@@ -295,7 +298,7 @@ SITUATION_VERS_INSERTION = {
 }
 
 
-def _integrer_insertion(beneficiaire, donnees):
+def _integrer_insertion(beneficiaire, donnees, soumission):
     champs = KOBO_FIELDS_SUIVI
     situation = donnees.get(champs["situation_actuelle"])
     situation_prof = SITUATION_VERS_INSERTION[situation]
@@ -321,11 +324,13 @@ def _integrer_insertion(beneficiaire, donnees):
             "secteur_activite": dict(SECTEURS).get(secteur_code, secteur_code),
             "date_insertion": date_insertion,
             "delai_insertion_mois": delai_insertion_mois,
+            "soumission_kobo": soumission,
         },
     )
 
 
-def _integrer_satisfaction_institution(donnees):
+def _integrer_satisfaction_institution(soumission):
+    donnees = soumission.donnees_effectives
     champs = KOBO_FIELDS_SATISFACTION_INSTITUTION
     institution = _resoudre_institution(donnees.get(champs["id_institution"]))
     if institution is None:
@@ -349,6 +354,7 @@ def _integrer_satisfaction_institution(donnees):
             "utilite_dispositif": donnees.get(champs["utilite_dispositif"], "") or "",
             "difficultes": donnees.get(champs["difficultes"], "") or "",
             "recommandations": donnees.get(champs["recommandations"], "") or "",
+            "soumission_kobo": soumission,
         },
     )
 
@@ -368,7 +374,7 @@ def traiter_soumission(soumission, utilisateur=None):
     integrateur = INTEGRATEURS[soumission.type_formulaire]
     donnees = soumission.donnees_effectives
     try:
-        integrateur(donnees)
+        integrateur(soumission)
     except Exception as exc:  # noqa: BLE001 - on veut journaliser puis continuer
         soumission.statut = "erreur"
         soumission.erreur = str(exc)

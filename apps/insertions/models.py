@@ -19,6 +19,12 @@ class Insertion(models.Model):
     date_insertion = models.DateField("Date d'insertion", null=True, blank=True)
     delai_insertion_mois = models.PositiveIntegerField("Délai d'insertion (mois)", null=True, blank=True)
 
+    # Cf. Suivi.soumission_kobo : supprimer la soumission supprime aussi cette ligne.
+    soumission_kobo = models.ForeignKey(
+        "imports.KoboSoumission", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="insertions_creees", editable=False,
+    )
+
     class Meta:
         ordering = ["-date_insertion"]
 
