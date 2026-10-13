@@ -323,7 +323,7 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         },
         "ages": liste_ages,
         "regions": _liste_repartition(
-            regions, "region", total_beneficiaires, dict(REGIONS), limite=5, segments_par_cle=regions_par_institution
+            regions, "region", total_beneficiaires, dict(REGIONS), segments_par_cle=regions_par_institution
         ),
         "institutions_liste": institutions_liste,
         "domaines": _liste_repartition(
