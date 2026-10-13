@@ -55,7 +55,18 @@
                 </td>
                 <td>{{ s.recu_le|date:"d/m/Y H:i" }}</td>
                 <td>{% if s.traite_le %}{{ s.traite_le|date:"d/m/Y H:i" }}{% if s.traite_par %} &middot; {{ s.traite_par.get_username }}{% endif %}{% else %}-{% endif %}</td>
-                <td><a href="{% url 'imports:detail' s.pk %}">Ouvrir &rarr;</a></td>
+                <td>
+                    <div class="ligne-actions">
+                        <a href="{% url 'imports:detail' s.pk %}">Ouvrir &rarr;</a>
+                        <form method="post" action="{% url 'imports:supprimer' s.pk %}" class="inline-form"
+                              onsubmit="return confirm('{% if s.statut == "integre" %}Supprimer définitivement cette soumission ? Elle est déjà intégrée : les données créées (suivi, satisfaction, insertion) resteront dans la base, seule la soumission elle-même disparaît.{% else %}Supprimer définitivement cette soumission ? Elle sera de nouveau téléchargée depuis Kobo à la prochaine synchronisation si elle y existe encore.{% endif %}');">
+                            {% csrf_token %}
+                            <button type="submit" class="bouton-icone-danger" title="Supprimer" aria-label="Supprimer">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="7" class="empty-state">Aucune soumission pour l'instant.</td></tr>

@@ -117,7 +117,7 @@ class SoumissionDetailView(SoumissionScopeeMixin, View):
             "beneficiaire": beneficiaire,
             "alertes": controler_soumission(soumission),
             "peut_valider": soumission.statut in ("nouveau", "erreur"),
-            "peut_supprimer": soumission.statut != "integre",
+            "peut_ecarter": soumission.statut != "integre",
         })
 
 

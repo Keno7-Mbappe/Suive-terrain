@@ -633,6 +633,14 @@ a { color: inherit; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table a { color: var(--brand-ink); text-decoration: none; font-size: 13px; font-weight: 650; }
 .data-table a:hover { text-decoration: underline; }
+.ligne-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.bouton-icone-danger {
+    display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+    border-radius: 8px; border: 1px solid transparent; background: none; color: var(--bad-ink); cursor: pointer;
+    flex-shrink: 0; transition: background .15s ease, border-color .15s ease;
+}
+.bouton-icone-danger:hover { background: var(--bad-bg); border-color: #F2B8BB; }
+.bouton-icone-danger svg { width: 15px; height: 15px; }
 
 .pagination { display: flex; gap: 12px; margin-top: 16px; font-size: 13px; align-items: center; }
 .pagination a { color: var(--brand-ink); text-decoration: none; font-weight: 650; }
