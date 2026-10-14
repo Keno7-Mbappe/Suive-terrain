@@ -47,17 +47,15 @@
        d'état et coordonnee avec l'orange de marque - pour les differencier d'un
        coup d'oeil partout (badges, graphiques) sans jamais changer selon le tri
        ou le filtre affiche. */
-    /* un trio volontairement choisi plutot que 3 teintes indépendantes : l'orange
-       de marque, puis deux couleurs froides qui s'enchainent depuis l'orange sans
-       sauter directement au violet (qui jure avec l'orange, cf. contraste
-       orange/violet "Halloween") - meme profondeur de ton (~40-45% luminosite,
-       forte saturation) pour une famille homogene. */
+    /* un trio choisi et valide avec l'utilisateur (option "B" : chaud / froid /
+       chaud) plutot que 3 teintes independantes - meme profondeur de ton
+       (~40-45% luminosite, forte saturation) pour une famille homogene. */
     --inst-dgfp:     var(--brand-ink);
     --inst-dgfp-bg:  var(--peach-100);
     --inst-inap:     #0E7C72;
     --inst-inap-bg:  #E1F5F2;
-    --inst-anefip:   #3730A3;
-    --inst-anefip-bg: #E0E7FF;
+    --inst-anefip:   #9D174D;
+    --inst-anefip-bg: #FDF2F8;
 
     --radius-sm: 10px;
     --radius-md: 16px;
@@ -300,8 +298,8 @@ a { color: inherit; }
     --peach-50: #F0FDFA; --peach-100: #CCFBF1; --peach-200: #99F6E4; --peach-300: #5EEAD4;
 }
 .dash[data-theme-institution="anefip"] {
-    --brand: #4F46E5; --brand-600: #4338CA; --brand-ink: #3730A3; --brand-400: #6366F1; --brand-300: #818CF8;
-    --peach-50: #EEF2FF; --peach-100: #E0E7FF; --peach-200: #C7D2FE; --peach-300: #A5B4FC;
+    --brand: #E11D48; --brand-600: #BE123C; --brand-ink: #9D174D; --brand-400: #FB7185; --brand-300: #FDA4AF;
+    --peach-50: #FFF1F2; --peach-100: #FFE4E6; --peach-200: #FECDD3; --peach-300: #FDA4AF;
 }
 .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .dash-head h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.15; }
