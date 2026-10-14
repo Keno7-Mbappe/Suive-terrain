@@ -21,6 +21,7 @@ kobo_forms/sauvegardes/
 # bénéficiaires - nom, téléphone) : importés en base via
 # `manage.py import_beneficiaires_excel`, jamais versionnés.
 PDCED-Skills_*-liste-nominative*.xlsx
+PDCED-Skills_*.xlsx
 ~$*.xlsx
 ~$*.docx
 
