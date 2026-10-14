@@ -68,7 +68,7 @@
                 <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg></span>
             </div>
             <div class="kpi-value" data-compte="{{ total_certifies }}">{{ total_certifies }}</div>
-            <div class="kpi-bottom"><span class="kpi-sub">Taux de certification</span><span class="badge{% if not taux_certifies %} badge-neutral{% endif %}" data-compte="{{ taux_certifies|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_certifies|floatformat:"0" }} %</span></div>
+            <div class="kpi-bottom"><span class="kpi-sub"><span data-compte="{{ total_certificats }}">{{ total_certificats }}</span> certificat{{ total_certificats|pluralize }} délivré{{ total_certificats|pluralize }}</span><span class="badge{% if not taux_certifies %} badge-neutral{% endif %}" data-compte="{{ taux_certifies|stringformat:'.1f' }}" data-suffixe=" %">{{ taux_certifies|floatformat:"0" }} %</span></div>
         </article>
         <article class="kpi">
             <div class="kpi-top">

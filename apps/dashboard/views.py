@@ -132,9 +132,12 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
     )
     total_formes = stats_formations["formes"]
 
-    total_certifies = (
-        Certification.objects.filter(beneficiaire__in=beneficiaires).values("beneficiaire").distinct().count()
-    )
+    certifications_beneficiaires = Certification.objects.filter(beneficiaire__in=beneficiaires)
+    total_certifies = certifications_beneficiaires.values("beneficiaire").distinct().count()
+    # Nombre de certificats delivres (une personne avec plusieurs formations peut
+    # en avoir plusieurs) : distinct de total_certifies, qui compte les PERSONNES
+    # (necessaire pour que "taux de certification" reste un pourcentage <= 100 %).
+    total_certificats = certifications_beneficiaires.count()
 
     insertions = Insertion.objects.filter(beneficiaire__in=beneficiaires)
     stats_insertions = insertions.aggregate(
@@ -294,6 +297,7 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         "total_beneficiaires": total_beneficiaires,
         "total_formes": total_formes,
         "total_certifies": total_certifies,
+        "total_certificats": total_certificats,
         "total_inseres": total_inseres,
         "total_suivis": total_suivis,
         "taux_formes": _taux(total_formes, total_beneficiaires),
