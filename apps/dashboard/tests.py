@@ -151,6 +151,32 @@ class DashboardViewsTests(TestCase):
         self.assertEqual(filtree.context["filtre_domaine"], "Informatique")
         self.assertEqual(filtree.context["total_beneficiaires"], 1)
 
+    def test_filtres_region_sexe_certification_refugie_handicap(self):
+        refugiee = _beneficiaire(
+            self.institution, nom="Refugiee", sexe="F", region="arta", est_refugie=True, pays_origine="somalie",
+        )
+        Certification.objects.create(beneficiaire=refugiee, type_certificat="Soudure", date_certification=date(2026, 1, 1))
+        _beneficiaire(
+            self.institution, nom="Handicape", sexe="M", region="djibouti",
+            situation_handicap=True, type_handicap="moteur",
+        )
+        _beneficiaire(self.institution, nom="Standard", sexe="M", region="djibouti")
+
+        reponse = self.client.get(reverse("dashboard:public"), {"region": "arta"})
+        self.assertEqual(reponse.context["total_beneficiaires"], 1)
+
+        reponse = self.client.get(reverse("dashboard:public"), {"sexe": "F"})
+        self.assertEqual(reponse.context["total_beneficiaires"], 1)
+
+        reponse = self.client.get(reverse("dashboard:public"), {"certification": "certifie"})
+        self.assertEqual(reponse.context["total_beneficiaires"], 1)
+
+        reponse = self.client.get(reverse("dashboard:public"), {"refugie": "oui"})
+        self.assertEqual(reponse.context["total_beneficiaires"], 1)
+
+        reponse = self.client.get(reverse("dashboard:public"), {"handicap": "oui"})
+        self.assertEqual(reponse.context["total_beneficiaires"], 1)
+
     def test_pages_declarent_un_viewport_adapte_aux_telephones(self):
         for url in (reverse("dashboard:public"), reverse("login")):
             self.assertContains(self.client.get(url), 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"')

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.imports",
     "apps.dashboard",
     "apps.reporting",
+    "apps.journal",
 ]
 
 MIDDLEWARE = [
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.journal.middleware.JournalMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

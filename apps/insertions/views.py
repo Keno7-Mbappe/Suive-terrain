@@ -63,6 +63,17 @@ class InsertionListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListV
         return context
 
 
+class StageListView(InsertionListView):
+    """Rubrique dédiée aux stagiaires (situation_prof == "stage") : même liste que les
+    insertions, mais toujours filtrée sur les stages et avec les informations propres
+    au suivi d'un stage (structure d'accueil, encadrant, date de fin) affichées."""
+
+    template_name = "insertions/stages.html"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(situation_prof="stage")
+
+
 class InsertionCreateView(RoleRequiredMixin, InstitutionScopedFormMixin, CreateView):
     allowed_roles = ("saisie",)
     model = Insertion

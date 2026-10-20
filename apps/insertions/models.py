@@ -19,6 +19,13 @@ class Insertion(models.Model):
     date_insertion = models.DateField("Date d'insertion", null=True, blank=True)
     delai_insertion_mois = models.PositiveIntegerField("Délai d'insertion (mois)", null=True, blank=True)
 
+    # Suivi des stagiaires (situation_prof == "stage") : la structure d'accueil et
+    # l'encadrant ne concernent que les stages, mais un champ texte libre ne coûte
+    # rien à laisser vide pour les autres situations professionnelles.
+    structure_accueil = models.CharField("Structure d'accueil", max_length=150, blank=True)
+    nom_encadrant = models.CharField("Nom de l'encadrant / maître de stage", max_length=150, blank=True)
+    date_fin_stage = models.DateField("Date de fin de stage", null=True, blank=True)
+
     # Cf. Suivi.soumission_kobo : supprimer la soumission supprime aussi cette ligne.
     soumission_kobo = models.ForeignKey(
         "imports.KoboSoumission", on_delete=models.CASCADE, null=True, blank=True,

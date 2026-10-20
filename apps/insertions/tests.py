@@ -110,3 +110,32 @@ class InsertionListViewFiltresTests(TestCase):
         self.assertEqual(
             [i.beneficiaire_id for i in reponse.context["insertions"]], [self.beneficiaire2.pk]
         )
+
+
+class StageListViewTests(TestCase):
+    def setUp(self):
+        self.dgfp = Institution.objects.create(libelle="DGFP", type="dgfp", region="djibouti")
+        self.stagiaire = Beneficiaire.objects.create(
+            nom="Houssein", prenom="Nima", sexe="F", date_naissance=date(2000, 1, 1),
+            region="djibouti", institution=self.dgfp,
+        )
+        self.salarie = Beneficiaire.objects.create(
+            nom="Omar", prenom="Yasin", sexe="M", date_naissance=date(1998, 7, 20),
+            region="djibouti", institution=self.dgfp,
+        )
+        Insertion.objects.create(
+            beneficiaire=self.stagiaire, situation_prof="stage",
+            structure_accueil="Ministère du Travail", nom_encadrant="Fatouma Ali",
+            date_insertion=date(2026, 9, 1), date_fin_stage=date(2026, 12, 1),
+        )
+        Insertion.objects.create(beneficiaire=self.salarie, situation_prof="emploi_salarie")
+        self.utilisateur = User.objects.create_user(username="consultante2", password="motdepasse123")
+        self.client.force_login(self.utilisateur)
+
+    def test_ne_liste_que_les_stages(self):
+        reponse = self.client.get(reverse("insertions:stages"))
+        self.assertEqual(
+            [i.beneficiaire_id for i in reponse.context["insertions"]], [self.stagiaire.pk]
+        )
+        self.assertContains(reponse, "Ministère du Travail")
+        self.assertContains(reponse, "Fatouma Ali")

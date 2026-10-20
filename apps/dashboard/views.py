@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.db.models import Avg, Count, Min, Q
 from django.shortcuts import render
 
-from apps.beneficiaires.models import Beneficiaire
+from apps.beneficiaires.models import SEXES, Beneficiaire
 from apps.certifications.models import Certification
 from apps.formations.models import Formation
 from apps.imports.models import KoboSoumission
@@ -107,7 +107,9 @@ def _compter_anomalies(beneficiaires):
     return nb
 
 
-def _calculer_contexte(cycle_id, institution_id, domaine=""):
+def _calculer_contexte(
+    cycle_id, institution_id, domaine="", region="", sexe="", certification="", refugie="", handicap="",
+):
     """Toutes les statistiques du tableau de bord. Les requêtes sont regroupées
     (agrégats conditionnels) : la base est distante, chaque aller-retour coûte cher."""
     beneficiaires = Beneficiaire.objects.all()
@@ -115,6 +117,22 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         beneficiaires = beneficiaires.filter(institution_id=institution_id)
     if domaine:
         beneficiaires = beneficiaires.filter(formations__domaine=domaine).distinct()
+    if region:
+        beneficiaires = beneficiaires.filter(region=region)
+    if sexe:
+        beneficiaires = beneficiaires.filter(sexe=sexe)
+    if certification == "certifie":
+        beneficiaires = beneficiaires.filter(certifications__isnull=False).distinct()
+    elif certification == "non_certifie":
+        beneficiaires = beneficiaires.filter(certifications__isnull=True)
+    if refugie == "oui":
+        beneficiaires = beneficiaires.filter(est_refugie=True)
+    elif refugie == "non":
+        beneficiaires = beneficiaires.filter(est_refugie=False)
+    if handicap == "oui":
+        beneficiaires = beneficiaires.filter(situation_handicap=True)
+    elif handicap == "non":
+        beneficiaires = beneficiaires.filter(situation_handicap=False)
 
     profil = beneficiaires.aggregate(
         total=Count("id_beneficiaire"),
@@ -372,6 +390,8 @@ def _calculer_contexte(cycle_id, institution_id, domaine=""):
         "domaines_disponibles": list(
             Formation.objects.exclude(domaine="").order_by("domaine").values_list("domaine", flat=True).distinct()
         ),
+        "regions_disponibles": REGIONS,
+        "sexes_disponibles": SEXES,
     }
 
 
@@ -383,14 +403,25 @@ def _contexte_dashboard(request):
     cycle_id = cycle_id if cycle_id.isdigit() else ""
     institution_id = institution_id if institution_id.isdigit() else ""
     domaine = request.GET.get("domaine", "").strip()[:150]
+    region = request.GET.get("region", "") if request.GET.get("region", "") in dict(REGIONS) else ""
+    sexe = request.GET.get("sexe", "") if request.GET.get("sexe", "") in dict(SEXES) else ""
+    certification = request.GET.get("certification", "")
+    certification = certification if certification in ("certifie", "non_certifie") else ""
+    refugie = request.GET.get("refugie", "")
+    refugie = refugie if refugie in ("oui", "non") else ""
+    handicap = request.GET.get("handicap", "")
+    handicap = handicap if handicap in ("oui", "non") else ""
 
     # md5 : le nom d'un domaine peut contenir des espaces ou accents, invalides dans une
     # clé de cache memcached (LocMemCache s'en moque, mais autant rester portable).
     cle_domaine = hashlib.md5(domaine.encode()).hexdigest()[:12] if domaine else ""
-    cle_cache = f"dashboard:{cycle_id}:{institution_id}:{cle_domaine}"
+    cle_cache = (
+        f"dashboard:{cycle_id}:{institution_id}:{cle_domaine}:{region}:{sexe}:"
+        f"{certification}:{refugie}:{handicap}"
+    )
     contexte = cache.get(cle_cache)
     if contexte is None:
-        contexte = _calculer_contexte(cycle_id, institution_id, domaine)
+        contexte = _calculer_contexte(cycle_id, institution_id, domaine, region, sexe, certification, refugie, handicap)
         cache.set(cle_cache, contexte, DUREE_CACHE_SECONDES)
     # Code d'institution (dgfp/inap/anefip) de l'institution filtrée, pour recolorer tout
     # le tableau de bord à sa couleur dédiée quand une seule institution est affichée
@@ -400,6 +431,8 @@ def _contexte_dashboard(request):
     )
     return {
         **contexte, "filtre_cycle": cycle_id, "filtre_institution": institution_id, "filtre_domaine": domaine,
+        "filtre_region": region, "filtre_sexe": sexe, "filtre_certification": certification,
+        "filtre_refugie": refugie, "filtre_handicap": handicap,
         "theme_institution": theme_institution or "",
     }
 

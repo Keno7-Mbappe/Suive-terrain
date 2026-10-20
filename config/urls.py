@@ -14,6 +14,7 @@ urlpatterns = [
     path("suivis/", include("apps.suivis.urls")),
     path("satisfactions/", include("apps.satisfactions.urls")),
     path("rapports/", include("apps.reporting.urls")),
+    path("journal/", include("apps.journal.urls")),
     path("soumissions/", include("apps.imports.urls")),
     path("login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
