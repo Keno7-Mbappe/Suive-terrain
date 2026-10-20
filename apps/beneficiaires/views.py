@@ -9,7 +9,7 @@ from apps.comptes.mixins import InstitutionScopedFormMixin, InstitutionScopedQue
 from apps.referentiels.models import REGIONS
 
 from .forms import BeneficiaireForm
-from .models import SEXES, STATUTS, Beneficiaire
+from .models import SEXES, STATUTS, TYPES_HANDICAP, Beneficiaire
 
 
 class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListView):
@@ -27,6 +27,8 @@ class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
         self.filtre_niveau_etude = self.request.GET.get("niveau_etude", "")
         self.filtre_institution = self.request.GET.get("institution", "")
         self.filtre_statut = self.request.GET.get("statut", "")
+        self.filtre_refugie = self.request.GET.get("refugie", "")
+        self.filtre_handicap = self.request.GET.get("handicap", "")
         # Chaque mot doit correspondre au nom OU au prénom, pour retrouver un bénéficiaire
         # en tapant "nom prénom" ou "prénom nom" indifféremment.
         for mot in self.recherche.split():
@@ -41,6 +43,14 @@ class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
             queryset = queryset.filter(institution_id=self.filtre_institution)
         if self.filtre_statut:
             queryset = queryset.filter(statut=self.filtre_statut)
+        if self.filtre_refugie == "oui":
+            queryset = queryset.filter(est_refugie=True)
+        elif self.filtre_refugie == "non":
+            queryset = queryset.filter(est_refugie=False)
+        if self.filtre_handicap == "oui":
+            queryset = queryset.filter(situation_handicap=True)
+        elif self.filtre_handicap == "non":
+            queryset = queryset.filter(situation_handicap=False)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -57,9 +67,14 @@ class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
         context["filtre_niveau_etude"] = self.filtre_niveau_etude
         context["filtre_institution"] = self.filtre_institution
         context["filtre_statut"] = self.filtre_statut
+        context["filtre_refugie"] = self.filtre_refugie
+        context["filtre_handicap"] = self.filtre_handicap
         context["sexes"] = SEXES
         context["regions"] = REGIONS
         context["statuts"] = STATUTS
+        context["types_handicap"] = dict(TYPES_HANDICAP)
+        context["nb_refugies"] = population.filter(est_refugie=True).count()
+        context["nb_handicap"] = population.filter(situation_handicap=True).count()
         context["niveaux_etude"] = (
             population_scope.exclude(niveau_etude="")
             .order_by("niveau_etude").values_list("niveau_etude", flat=True).distinct()
@@ -74,6 +89,7 @@ class BeneficiaireListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, Li
         context["filtres_actifs"] = bool(
             self.recherche or self.filtre_sexe or self.filtre_region
             or self.filtre_niveau_etude or self.filtre_institution or self.filtre_statut
+            or self.filtre_refugie or self.filtre_handicap
         )
         return context
 

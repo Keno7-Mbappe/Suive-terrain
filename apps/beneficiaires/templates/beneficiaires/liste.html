@@ -4,7 +4,7 @@
 <div class="hero">
     <div>
         <h1>Bénéficiaires</h1>
-        <p>{{ page_obj.paginator.count }} enregistré(s) &middot; {{ nb_actifs }} actif(s) &middot; {{ nb_femmes }} femmes / {{ nb_hommes }} hommes</p>
+        <p>{{ page_obj.paginator.count }} enregistré(s) &middot; {{ nb_actifs }} actif(s) &middot; {{ nb_femmes }} femmes / {{ nb_hommes }} hommes &middot; {{ nb_refugies }} réfugié(s) &middot; {{ nb_handicap }} en situation de handicap</p>
     </div>
     {% if user.profile.is_saisie %}
     <a href="{% url 'beneficiaires:creer' %}" class="primary-button">+ Nouveau bénéficiaire</a>
@@ -64,6 +64,22 @@
             </select>
         </div>
         <div class="filter-field">
+            <label for="refugie">Réfugié</label>
+            <select name="refugie" id="refugie" onchange="this.form.submit()">
+                <option value="">Tous</option>
+                <option value="oui" {% if filtre_refugie == "oui" %}selected{% endif %}>Réfugié</option>
+                <option value="non" {% if filtre_refugie == "non" %}selected{% endif %}>Non réfugié</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="handicap">Handicap</label>
+            <select name="handicap" id="handicap" onchange="this.form.submit()">
+                <option value="">Tous</option>
+                <option value="oui" {% if filtre_handicap == "oui" %}selected{% endif %}>En situation de handicap</option>
+                <option value="non" {% if filtre_handicap == "non" %}selected{% endif %}>Sans situation de handicap</option>
+            </select>
+        </div>
+        <div class="filter-field">
             <label>&nbsp;</label>
             <button type="submit" class="secondary-button">Rechercher</button>
         </div>
@@ -82,7 +98,7 @@
             <tr>
                 <th>ID</th><th>Nom</th><th>Prénom</th><th>Sexe</th><th>Date de naissance</th><th>Âge</th>
                 <th>Région</th><th>Quartier</th><th>Niveau d'étude</th><th>Institution</th>
-                <th>Téléphone</th><th>Enregistré le</th><th>Statut</th><th></th>
+                <th>Téléphone</th><th>Enregistré le</th><th>Statut</th><th>Réfugié</th><th>Handicap</th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -101,6 +117,8 @@
                 <td>{{ b.telephone|default:"-" }}</td>
                 <td>{{ b.date_enregistrement }}</td>
                 <td>{{ b.get_statut_display }}</td>
+                <td>{% if b.est_refugie %}<span class="badge badge-neutre">{{ b.get_pays_origine_display|default:"Oui" }}</span>{% else %}-{% endif %}</td>
+                <td>{% if b.situation_handicap %}<span class="badge badge-neutre">{{ b.get_type_handicap_display|default:"Oui" }}</span>{% else %}-{% endif %}</td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
                     <a href="{% url 'beneficiaires:modifier' b.pk %}">Modifier</a>
@@ -108,7 +126,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="14" class="empty-state">Aucun bénéficiaire enregistré.</td></tr>
+            <tr><td colspan="16" class="empty-state">Aucun bénéficiaire enregistré.</td></tr>
             {% endfor %}
         </tbody>
     </table>

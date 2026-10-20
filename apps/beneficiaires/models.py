@@ -13,6 +13,22 @@ STATUTS = [
     ("archive", "Archivé"),
 ]
 
+PAYS_ORIGINE_REFUGIE = [
+    ("somalie", "Somalie"),
+    ("ethiopie", "Éthiopie"),
+    ("yemen", "Yémen"),
+    ("erythree", "Érythrée"),
+    ("autre", "Autre"),
+]
+
+TYPES_HANDICAP = [
+    ("moteur", "Moteur"),
+    ("visuel", "Visuel"),
+    ("auditif", "Auditif"),
+    ("intellectuel", "Intellectuel"),
+    ("autre", "Autre"),
+]
+
 
 def _classer_tranche_age(age):
     if age is None:
@@ -63,6 +79,15 @@ class Beneficiaire(models.Model):
     email = models.EmailField("E-mail", blank=True)
     date_enregistrement = models.DateField("Date d'enregistrement", default=date.today)
     statut = models.CharField("Statut", max_length=20, choices=STATUTS, default="actif")
+
+    est_refugie = models.BooleanField("Réfugié", default=False)
+    pays_origine = models.CharField(
+        "Pays d'origine (si réfugié)", max_length=20, choices=PAYS_ORIGINE_REFUGIE, blank=True,
+    )
+    situation_handicap = models.BooleanField("Situation de handicap", default=False)
+    type_handicap = models.CharField(
+        "Type de handicap", max_length=20, choices=TYPES_HANDICAP, blank=True,
+    )
 
     class Meta:
         ordering = ["-date_enregistrement"]
