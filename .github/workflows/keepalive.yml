@@ -13,4 +13,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping le tableau de bord public
-        run: curl -fsS --max-time 30 https://pdced-skills-fcac.onrender.com/dashboard/public/ -o /dev/null
+        run: curl -fsS --max-time 90 --retry 2 --retry-delay 5 https://pdced-skills-fcac.onrender.com/dashboard/public/ -o /dev/null
