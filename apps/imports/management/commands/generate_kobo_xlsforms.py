@@ -30,6 +30,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from openpyxl import Workbook
 
+from apps.beneficiaires.models import PAYS_ORIGINE_REFUGIE, TYPES_HANDICAP
 from apps.satisfactions.models import AMELIORATIONS_EMPLOYABILITE, NOTES, UTILITE_DISPOSITIF
 from apps.suivis.models import (
     CANAUX_CONTACT,
@@ -157,11 +158,28 @@ def _formulaire_suivi_et_satisfaction():
          "relevant": "selected(${situation}, 'emploi') or selected(${situation}, 'auto_emploi') "
                      "or selected(${situation}, 'stage')",
          "required": "yes"},
+        {"type": "text", "name": "structure_accueil", "label": "Structure d'accueil du stage",
+         "relevant": "selected(${situation}, 'stage')", "required": "yes"},
+        {"type": "text", "name": "nom_encadrant", "label": "Nom de l'encadrant / maître de stage",
+         "relevant": "selected(${situation}, 'stage')"},
+        {"type": "date", "name": "date_fin_stage", "label": "Date de fin de stage prévue",
+         "relevant": "selected(${situation}, 'stage')"},
         {"type": "integer", "name": "duree_recherche_mois", "label": "Depuis combien de mois êtes-vous en recherche ?",
          "relevant": "selected(${situation}, 'recherche')", "required": "yes"},
         {"type": "select_multiple demarches", "name": "demarches", "label": "Démarches entreprises",
          "relevant": "selected(${situation}, 'recherche')"},
         {"type": "text", "name": "obstacle", "label": "Principal obstacle rencontré"},
+        {"type": "note", "name": "consigne_profil",
+         "label": "Les deux questions suivantes mettent à jour la fiche du bénéficiaire (utile si ce n'était "
+                   "pas connu à l'inscription) - répondez-y seulement si vous avez l'information."},
+        {"type": "select_one oui_non", "name": "refugie",
+         "label": "Le/la bénéficiaire est-il/elle réfugié(e) ?"},
+        {"type": "select_one pays_origine", "name": "pays_origine", "label": "Pays d'origine",
+         "relevant": "selected(${refugie}, 'oui')", "required": "yes"},
+        {"type": "select_one oui_non", "name": "handicap",
+         "label": "Le/la bénéficiaire est-il/elle en situation de handicap ?"},
+        {"type": "select_one type_handicap", "name": "type_handicap", "label": "Type de handicap",
+         "relevant": "selected(${handicap}, 'oui')", "required": "yes"},
         {"type": "end_group", "name": "module_suivi"},
 
         {"type": "begin_group", "name": "bascule", "label": "Module 2 – Satisfaction", "relevant": joint},
@@ -214,6 +232,8 @@ def _formulaire_suivi_et_satisfaction():
         "cycles": CYCLES_KOBO,
         "echelle_5": NOTES,
         "amelioration": AMELIORATIONS_EMPLOYABILITE,
+        "pays_origine": PAYS_ORIGINE_REFUGIE,
+        "type_handicap": TYPES_HANDICAP,
     }
     return _construire_classeur(
         "PDCED – Skills | Enquête terrain (suivi et satisfaction)", "pdced_suivi_satisfaction", survey, choices

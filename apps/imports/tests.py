@@ -160,6 +160,75 @@ class TraiterSoumissionTests(TestCase):
         self.assertEqual(satisfaction.note_accueil, 5)
         self.assertTrue(satisfaction.recommande)
 
+    def test_soumission_met_a_jour_le_profil_refugie_et_handicap(self):
+        soumission = KoboSoumission.objects.create(
+            type_formulaire="suivi", kobo_submission_id="4", statut="nouveau",
+            donnees_brutes={
+                "selection/id_beneficiaire": self.beneficiaire.pk,
+                "selection/date_contact": "2026-12-01",
+                "issue_contact": "joint",
+                "module_suivi/vague": "m3",
+                "module_suivi/situation": "inactif",
+                "module_suivi/refugie": "oui",
+                "module_suivi/pays_origine": "somalie",
+                "module_suivi/handicap": "oui",
+                "module_suivi/type_handicap": "moteur",
+            },
+        )
+        reussite = traiter_soumission(soumission)
+        self.assertTrue(reussite)
+        self.beneficiaire.refresh_from_db()
+        self.assertTrue(self.beneficiaire.est_refugie)
+        self.assertEqual(self.beneficiaire.pays_origine, "somalie")
+        self.assertTrue(self.beneficiaire.situation_handicap)
+        self.assertEqual(self.beneficiaire.type_handicap, "moteur")
+
+    def test_soumission_sans_reponse_refugie_handicap_necrase_pas_le_profil(self):
+        self.beneficiaire.est_refugie = True
+        self.beneficiaire.pays_origine = "yemen"
+        self.beneficiaire.save(update_fields=["est_refugie", "pays_origine"])
+        soumission = KoboSoumission.objects.create(
+            type_formulaire="suivi", kobo_submission_id="5", statut="nouveau",
+            donnees_brutes={
+                "selection/id_beneficiaire": self.beneficiaire.pk,
+                "selection/date_contact": "2026-12-01",
+                "issue_contact": "joint",
+                "module_suivi/vague": "m3",
+                "module_suivi/situation": "inactif",
+            },
+        )
+        reussite = traiter_soumission(soumission)
+        self.assertTrue(reussite)
+        self.beneficiaire.refresh_from_db()
+        self.assertTrue(self.beneficiaire.est_refugie)
+        self.assertEqual(self.beneficiaire.pays_origine, "yemen")
+
+    def test_soumission_stage_cree_une_insertion_avec_les_details(self):
+        from apps.insertions.models import Insertion
+
+        soumission = KoboSoumission.objects.create(
+            type_formulaire="suivi", kobo_submission_id="6", statut="nouveau",
+            donnees_brutes={
+                "selection/id_beneficiaire": self.beneficiaire.pk,
+                "selection/date_contact": "2026-12-01",
+                "issue_contact": "joint",
+                "module_suivi/vague": "m3",
+                "module_suivi/situation": "stage",
+                "module_suivi/secteur": "commerce",
+                "module_suivi/date_debut_activite": "2026-11-01",
+                "module_suivi/lien_formation": "direct",
+                "module_suivi/structure_accueil": "Ministère du Travail",
+                "module_suivi/nom_encadrant": "Fatouma Ali",
+                "module_suivi/date_fin_stage": "2027-02-01",
+            },
+        )
+        reussite = traiter_soumission(soumission)
+        self.assertTrue(reussite)
+        insertion = Insertion.objects.get(beneficiaire=self.beneficiaire, situation_prof="stage")
+        self.assertEqual(insertion.structure_accueil, "Ministère du Travail")
+        self.assertEqual(insertion.nom_encadrant, "Fatouma Ali")
+        self.assertEqual(insertion.date_fin_stage, date(2027, 2, 1))
+
 
 class SoumissionListViewTests(TestCase):
     def setUp(self):

@@ -56,6 +56,17 @@ def _vers_bool_oui_non(valeur):
     return str(valeur or "").strip().lower() == "oui"
 
 
+def _tri_etat_oui_non(valeur):
+    """None si la question n'a pas été posée/répondue (ne pas écraser la base
+    avec une absence de réponse) ; sinon le booléen correspondant."""
+    valeur = str(valeur or "").strip().lower()
+    if valeur == "oui":
+        return True
+    if valeur == "non":
+        return False
+    return None
+
+
 def _resoudre_institution(code):
     """Retrouve l'institution d'après le code du formulaire Kobo (INAP, DGFP, ANEFIP)
     - ou son identifiant numérique, pour les formulaires qui exportent la liste des
@@ -95,6 +106,13 @@ KOBO_FIELDS_SUIVI = {
     "duree_recherche_mois": "module_suivi/duree_recherche_mois",
     "demarches": "module_suivi/demarches",
     "obstacle_principal": "module_suivi/obstacle",
+    "structure_accueil": "module_suivi/structure_accueil",
+    "nom_encadrant": "module_suivi/nom_encadrant",
+    "date_fin_stage": "module_suivi/date_fin_stage",
+    "refugie": "module_suivi/refugie",
+    "pays_origine": "module_suivi/pays_origine",
+    "handicap": "module_suivi/handicap",
+    "type_handicap": "module_suivi/type_handicap",
 }
 
 # Sous-partie "satisfaction", incluse dans la même soumission que le suivi
@@ -209,12 +227,33 @@ def _get_beneficiaire(id_beneficiaire):
         return None
 
 
+def _mettre_a_jour_profil_beneficiaire(beneficiaire, donnees, champs):
+    """Le module suivi repropose les questions réfugié/handicap (utile si
+    l'information n'était pas connue à l'inscription) : met à jour la fiche
+    du bénéficiaire si la question a été répondue, sans écraser une valeur
+    déjà en base quand le champ est laissé vide (question optionnelle)."""
+    champs_modifies = []
+    refugie = _tri_etat_oui_non(donnees.get(champs["refugie"]))
+    if refugie is not None:
+        beneficiaire.est_refugie = refugie
+        beneficiaire.pays_origine = donnees.get(champs["pays_origine"], "") or "" if refugie else ""
+        champs_modifies += ["est_refugie", "pays_origine"]
+    handicap = _tri_etat_oui_non(donnees.get(champs["handicap"]))
+    if handicap is not None:
+        beneficiaire.situation_handicap = handicap
+        beneficiaire.type_handicap = donnees.get(champs["type_handicap"], "") or "" if handicap else ""
+        champs_modifies += ["situation_handicap", "type_handicap"]
+    if champs_modifies:
+        beneficiaire.save(update_fields=champs_modifies)
+
+
 def _integrer_suivi(soumission):
     donnees = soumission.donnees_effectives
     champs = KOBO_FIELDS_SUIVI
     beneficiaire = _get_beneficiaire(donnees.get(champs["id_beneficiaire"]))
     if beneficiaire is None:
         raise ValueError(f"Bénéficiaire introuvable : {donnees.get(champs['id_beneficiaire'])}")
+    _mettre_a_jour_profil_beneficiaire(beneficiaire, donnees, champs)
 
     vague = donnees.get(champs["vague"])
     if not vague:
@@ -318,14 +357,20 @@ def _integrer_insertion(beneficiaire, donnees, soumission):
             if delta_mois >= 0:
                 delai_insertion_mois = delta_mois
 
+    defaults = {
+        "secteur_activite": dict(SECTEURS).get(secteur_code, secteur_code),
+        "date_insertion": date_insertion,
+        "delai_insertion_mois": delai_insertion_mois,
+        "soumission_kobo": soumission,
+    }
+    if situation_prof == "stage":
+        defaults["structure_accueil"] = donnees.get(champs["structure_accueil"], "") or ""
+        defaults["nom_encadrant"] = donnees.get(champs["nom_encadrant"], "") or ""
+        defaults["date_fin_stage"] = parse_date(donnees.get(champs["date_fin_stage"]) or "") or None
+
     Insertion.objects.update_or_create(
         beneficiaire=beneficiaire, situation_prof=situation_prof,
-        defaults={
-            "secteur_activite": dict(SECTEURS).get(secteur_code, secteur_code),
-            "date_insertion": date_insertion,
-            "delai_insertion_mois": delai_insertion_mois,
-            "soumission_kobo": soumission,
-        },
+        defaults=defaults,
     )
 
 
