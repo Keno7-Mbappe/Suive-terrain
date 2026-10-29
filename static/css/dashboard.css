@@ -541,17 +541,90 @@ a { color: inherit; }
     .kpi-value { font-size: 26px; }
     .step-value { font-size: 22px; }
 }
-/* En dessous de ~820px de hauteur (1366x768 et la plupart des portables), le
-   mode "tout sur un seul écran" ne laisse plus assez de place : mieux vaut
-   des cartes confortables qui défilent qu'un contenu réel invisible, coupé
-   net par le overflow:hidden du mode plein écran (observé en production). */
-@media (max-width: 1280px), (max-height: 820px) {
+/* Portables courants (1366x768 et proches, ~661-820px de hauteur) : encore
+   assez haut pour tenir sur un seul écran sans défiler, à condition de
+   resserrer nettement les espacements, polices et filtres (sinon le contenu
+   réel se fait couper net par le overflow:hidden du mode plein écran -
+   observé en production). */
+@media (min-width: 1281px) and (max-height: 820px) {
+    .vue-ecran .page { padding-top: 10px; padding-bottom: 10px; }
+    .dash { gap: 7px; }
+    .dash-head h1 { font-size: 19px; }
+    .dash-head p, .dash-head .eyebrow { display: none; }
+    .pill-alerte { padding: 5px 10px 5px 6px; font-size: 11px; }
+    .pill-alerte b { min-width: 20px; height: 20px; font-size: 11px; }
+    .dash-tools { gap: 6px; }
+    .filters { gap: 7px; }
+    .filter-field { display: flex; align-items: center; gap: 5px; }
+    .filter-field label { margin-bottom: 0; font-size: 9px; white-space: nowrap; }
+    .filter-field select { max-width: 120px; padding: 4px 22px 4px 9px; font-size: 11px; background-position: right 8px center; box-shadow: none; }
+    .filter-field .reset-link { height: auto; font-size: 11px; }
+    .kpis { gap: 7px; }
+    .kpi { padding: 7px 10px 7px; border-radius: 12px; }
+    .kpi-label { font-size: 10.5px; }
+    .kpi-icon { width: 20px; height: 20px; }
+    .kpi-icon svg { width: 11px; height: 11px; }
+    .kpi-value { font-size: 20px; margin-top: 3px; }
+    .kpi-bottom { margin-top: 3px; }
+    .kpi-sub { font-size: 10px; }
+    .row-b, .row-c { gap: 7px; }
+    .card { padding: 8px 10px 8px; border-radius: 12px; }
+    .card-head { margin-bottom: 3px; }
+    .card-icon { width: 18px; height: 18px; }
+    .card-icon svg { width: 10px; height: 10px; }
+    .card-title { font-size: 11.5px; }
+    .card-sub { display: none; }
+    .step-label { font-size: 10px; }
+    .step-value { font-size: 19px; margin: 1px 0 2px; }
+    .step-conv { min-height: 14px; }
+    .step-zone { min-height: 20px; margin-top: 4px; }
+    .gauge { min-height: 60px; max-height: 85px; }
+    .gauge-centre strong { font-size: 19px; }
+    .gauge-centre span { font-size: 11px; }
+    .gauge-centre small { font-size: 9.5px; margin-top: 0; }
+    .duo { margin: 4px 0 4px; }
+    .duo > div { padding: 3px 6px; }
+    .duo span { font-size: 9px; }
+    .duo strong { font-size: 13px; }
+    .notes { gap: 2px; }
+    .notes li { font-size: 10px; }
+    .barres { gap: 4px; }
+    .barres:has(li:nth-child(4)) { gap: 3px; }
+    .barres .ligne { font-size: 10.5px; }
+    .piste { height: 5px; margin-top: 2px; }
+    .donut { min-height: 55px; }
+    .donut-centre strong { font-size: 16px; }
+    .donut-centre small { font-size: 9px; }
+    .legende-liste { gap: 2px; margin-top: 4px; }
+    .legende-liste li { font-size: 10.5px; }
+    .legende-liste i { width: 7px; height: 7px; }
+    .legende-liste.etale { margin-top: 4px; }
+    .legende-liste.etale li { padding: 3px 0; }
+    .repartition-sexe { margin-bottom: 5px; }
+    .repartition-sexe .ligne { font-size: 10.5px; margin-bottom: 3px; }
+    .repartition-sexe b { font-size: 12px; }
+    .scinde { height: 7px; }
+    .ages { gap: 2px; }
+    .age { font-size: 9px; }
+    .age b { font-size: 10px; }
+    .age-zone { min-height: 16px; margin: 2px 0; }
+    .meter { margin-bottom: 5px; }
+    .meter-top { font-size: 10.5px; margin-bottom: 2px; }
+    .meter-track { height: 5px; }
+    .mini-stats strong { font-size: 13px; }
+    .mini-stats span { font-size: 9px; }
+    .mini-stats a, .mini-stats div { padding: 5px 4px; }
+}
+/* En dessous de ~660px de hauteur, ou sur un écran étroit : même resserré,
+   il n'y a plus assez de place - la page défile plutôt que de couper du
+   contenu réel. */
+@media (max-width: 1280px), (max-height: 660px) {
     .vue-ecran .app, .vue-ecran .app-main { height: auto; overflow: visible; }
     .vue-ecran .page { height: auto; }
     .dash { grid-template-rows: auto; }
-    .row-b, .row-c { min-height: 360px; }
+    .row-b, .row-c { min-height: 340px; }
     .row-c { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .row-c .card { min-height: 270px; }
+    .row-c .card { min-height: 250px; }
 }
 /* (tablette et téléphone : voir la section « Adaptation aux écrans » en fin de fichier) */
 
