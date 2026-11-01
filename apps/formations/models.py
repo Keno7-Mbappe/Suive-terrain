@@ -4,6 +4,7 @@ STATUTS_FORMATION = [
     ("en_cours", "En cours"),
     ("achevee", "Achevée"),
     ("abandonnee", "Abandonnée"),
+    ("echec", "Échec"),
 ]
 
 

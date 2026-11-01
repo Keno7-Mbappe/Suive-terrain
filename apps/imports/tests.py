@@ -300,6 +300,29 @@ class SoumissionActionsViewTests(TestCase):
         self.assertEqual(soumission.statut, "doublon")
 
 
+def _classeur_liste_brute(tmp_path, lignes_beneficiaires, lignes_formations):
+    """Construit un fichier au format institutionnel "brut" (ex. export INAP) :
+    "<INSTITUTION>_beneficiaires_et_formations.xlsx" - nom/prénom déjà séparés,
+    colonnes Réfugié/Handicapé, statut par formation."""
+    classeur = openpyxl.Workbook()
+    feuille_b = classeur.active
+    feuille_b.title = "beneficiaires"
+    feuille_b.append([
+        "ID_Beneficaire", "Nom", "Prénom", "Sexe", "Date de naissance", "Âge",
+        "Région", "Quartier", "Niveau d'étude", "Institution", "Téléphone", "Statut",
+        "Réfugié", "Handicapé",
+    ])
+    for ligne in lignes_beneficiaires:
+        feuille_b.append(ligne)
+    feuille_f = classeur.create_sheet("formations")
+    feuille_f.append(["ID_Formation", "ID_Beneficaire", "Domaine", "Centre", "Cohorte", "Début", "Fin", "Statut"])
+    for ligne in lignes_formations:
+        feuille_f.append(ligne)
+    chemin = tmp_path / "liste_brute.xlsx"
+    classeur.save(chemin)
+    return str(chemin)
+
+
 def _classeur_liste_nominative(tmp_path, lignes_beneficiaires, lignes_formations, lignes_certificats=None):
     """Construit un fichier au format "PDCED-Skills_<INSTITUTION>-liste-nominative.xlsx"
     (mêmes colonnes, mêmes dates en texte que les vraies listes institutionnelles)."""
@@ -471,3 +494,84 @@ class ImportBeneficiairesExcelTests(TestCase):
                 call_command("import_beneficiaires_excel", fichier, stdout=StringIO())
         self.assertEqual(Beneficiaire.objects.filter(institution=self.anefip).count(), 1)
         self.assertEqual(appels["n"], 2)
+
+
+class ImportListeBruteExcelTests(TestCase):
+    """Format institutionnel brut (ex. export INAP) : nom/prénom déjà séparés,
+    colonnes Réfugié/Handicapé, et surtout un statut PAR FORMATION (achevee/
+    en_cours/abandon/echec) - contrairement au format normalisé qui n'a qu'un
+    statut global par bénéficiaire."""
+
+    def setUp(self):
+        self.inap = Institution.objects.create(libelle="INAP", type="inap", region="djibouti")
+        self.anefip = Institution.objects.create(libelle="ANEFIP", type="anefip", region="djibouti")
+
+    def test_import_separe_nom_prenom_et_renseigne_refugie_handicap(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_brute(
+                Path(tmp),
+                [("I-0001", "ALI AHMED", "ABADIR", "M", "2001-10-06", 25, "Djibouti", "Balbala",
+                  "BAC", "INAP", 77595825, "formé", "Oui", "Non")],
+                [("IF-0001", "I-0001", "HOTELLERIE", "Centre A", None, "2024-11-01", "2025-09-30", "achevee")],
+            )
+            call_command("import_liste_brute_excel", fichier, stdout=StringIO())
+        b = Beneficiaire.objects.get(institution=self.inap)
+        self.assertEqual((b.nom, b.prenom), ("ALI AHMED", "ABADIR"))
+        self.assertTrue(b.est_refugie)
+        self.assertFalse(b.situation_handicap)
+        formation = Formation.objects.get(beneficiaire=b)
+        self.assertEqual(formation.statut_formation, "achevee")
+
+    def test_champs_manquants_ne_font_pas_planter_limport(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_brute(
+                Path(tmp),
+                [("I-0001", "IDRISS", "ROBLEH", None, None, None, None, None, None, "INAP", None, None, None, None)],
+                [("IF-0001", "I-0001", None, "Centre B", None, None, None, "en_cours")],
+            )
+            call_command("import_liste_brute_excel", fichier, stdout=StringIO())
+        b = Beneficiaire.objects.get(institution=self.inap)
+        self.assertEqual(b.sexe, "")
+        self.assertIsNone(b.date_naissance)
+        self.assertFalse(b.est_refugie)
+        self.assertFalse(b.situation_handicap)
+
+    def test_statuts_par_formation_sont_normalises(self):
+        # "echec" est un statut distinct d'"abandon" (une personne qui a fini la
+        # formation mais raté l'évaluation n'a pas "abandonné") - cf. décision prise
+        # avec l'utilisateur à l'import du fichier INAP réel (80 cas sur 1240).
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_brute(
+                Path(tmp),
+                [
+                    ("I-0001", "NOM1", "P1", "M", None, None, "Djibouti", None, None, "INAP", None, None, "Non", "Non"),
+                    ("I-0002", "NOM2", "P2", "M", None, None, "Djibouti", None, None, "INAP", None, None, "Non", "Non"),
+                ],
+                [
+                    ("IF-0001", "I-0001", "A", "Centre A", None, "2026-01-01", None, "abandon"),
+                    ("IF-0002", "I-0002", "B", "Centre B", None, "2026-01-01", None, "echec"),
+                ],
+            )
+            call_command("import_liste_brute_excel", fichier, stdout=StringIO())
+        self.assertEqual(Formation.objects.get(domaine="A").statut_formation, "abandonnee")
+        self.assertEqual(Formation.objects.get(domaine="B").statut_formation, "echec")
+
+    def test_un_homonyme_dans_une_autre_institution_nest_pas_confondu(self):
+        Beneficiaire.objects.create(
+            nom="Ahmed", prenom="Mohamed", sexe="M", date_naissance=date(1996, 11, 17),
+            region="djibouti", institution=self.anefip,
+        )
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            fichier = _classeur_liste_brute(
+                Path(tmp),
+                [("I-0001", "Ahmed", "Mohamed", "M", "1996-11-17", 30, "Djibouti", None, None,
+                  "INAP", None, "formé", "Non", "Non")],
+                [],
+            )
+            call_command("import_liste_brute_excel", fichier, stdout=StringIO())
+        self.assertEqual(Beneficiaire.objects.filter(institution=self.anefip).count(), 1)
+        self.assertEqual(Beneficiaire.objects.filter(institution=self.inap).count(), 1)

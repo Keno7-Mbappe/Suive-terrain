@@ -19,9 +19,10 @@ kobo_forms/sauvegardes/
 
 # Fichiers Excel source des institutions (données nominatives réelles des
 # bénéficiaires - nom, téléphone) : importés en base via
-# `manage.py import_beneficiaires_excel`, jamais versionnés.
+# `manage.py import_beneficiaires_excel` / `import_liste_brute_excel`, jamais versionnés.
 PDCED-Skills_*-liste-nominative*.xlsx
 PDCED-Skills_*.xlsx
+*_beneficiaires_et_formations.xlsx
 ~$*.xlsx
 ~$*.docx
 
