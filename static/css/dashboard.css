@@ -24,10 +24,13 @@
     --ink-2:       #4B423B;
     --ink-muted:   #8C8278;
 
-    /* accent bleu marine et teintes bleu pale */
-    --brand:       #1E3A5F;
-    --brand-600:   #16293F;
-    --brand-ink:   #1E3A5F;   /* bleu marine lisible en texte sur fond clair (contraste >= 4,5) */
+    /* accent bleu marine et teintes bleu pale - bleu avive (vs #1E3A5F d'origine,
+       trop proche du noir a l'ecran) pour rester bien visible comme accent de
+       marque, tout en gardant la meme famille de teinte ; contraste texte sur
+       fond clair toujours >= 4,5 (verifie : ~6,8 sur --canvas, ~8 sur --surface). */
+    --brand:       #1E4D8F;
+    --brand-600:   #173B6D;
+    --brand-ink:   #1E4D8F;
     --brand-400:   #3E6690;
     --brand-300:   #6B91B8;
     --peach-50:    #F3F7FB;
@@ -201,7 +204,7 @@ a { color: inherit; }
 .filter-field select {
     appearance: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
     padding-right: 36px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23C2570A' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231E4D8F' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
 }
 .filter-field input[type="search"] { max-width: 220px; }
 .filter-field select:hover, .filter-field select:focus,
@@ -554,19 +557,24 @@ a { color: inherit; }
     .pill-alerte { padding: 5px 10px 5px 6px; font-size: 11px; }
     .pill-alerte b { min-width: 20px; height: 20px; font-size: 11px; }
     .dash-tools { gap: 6px; }
-    .filters { gap: 7px; }
-    .filter-field { display: flex; align-items: center; gap: 5px; }
-    .filter-field label { margin-bottom: 0; font-size: 9px; white-space: nowrap; }
-    .filter-field select { max-width: 120px; padding: 4px 22px 4px 9px; font-size: 11px; background-position: right 8px center; box-shadow: none; }
-    .filter-field .reset-link { height: auto; font-size: 11px; }
-    .kpis { gap: 7px; }
-    .kpi { padding: 7px 10px 7px; border-radius: 12px; }
-    .kpi-label { font-size: 10.5px; }
-    .kpi-icon { width: 20px; height: 20px; }
-    .kpi-icon svg { width: 11px; height: 11px; }
-    .kpi-value { font-size: 20px; margin-top: 3px; }
-    .kpi-bottom { margin-top: 3px; }
-    .kpi-sub { font-size: 10px; }
+    /* Grille fixe a 4 colonnes plutot que le flex-wrap d'origine : avec 8 champs,
+       le flex-wrap renvoyait la ligne a la ligne suivante (observe en prod : le
+       8e champ, Handicap, atterrissait seul, plaque a droite, desaligne des
+       autres). Une grille garantit 2 rangees completes et alignees quel que
+       soit le nombre de champs actifs. */
+    .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px 18px; width: 100%; }
+    .filters > .reset-link { grid-column: 1 / -1; justify-self: end; height: auto; font-size: 11px; }
+    .filter-field { display: flex; align-items: center; gap: 6px; }
+    .filter-field label { margin-bottom: 0; font-size: 9.5px; white-space: nowrap; }
+    .filter-field select { width: 100%; max-width: none; padding: 5px 24px 5px 10px; font-size: 11.5px; background-position: right 9px center; box-shadow: none; }
+    .kpis { gap: 9px; }
+    .kpi { padding: 11px 15px 11px; border-radius: 14px; }
+    .kpi-label { font-size: 11.5px; }
+    .kpi-icon { width: 25px; height: 25px; }
+    .kpi-icon svg { width: 13px; height: 13px; }
+    .kpi-value { font-size: 26px; margin-top: 5px; }
+    .kpi-bottom { margin-top: 5px; }
+    .kpi-sub { font-size: 10.5px; }
     .row-b, .row-c { gap: 7px; }
     .card { padding: 8px 10px 8px; border-radius: 12px; }
     .card-head { margin-bottom: 3px; }
