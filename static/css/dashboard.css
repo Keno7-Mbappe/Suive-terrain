@@ -703,8 +703,12 @@ a { color: inherit; }
 .data-table th { color: var(--ink-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; background: var(--surface-2); }
 .data-table th:first-child { border-top-left-radius: var(--radius-sm); }
 .data-table th:last-child { border-top-right-radius: var(--radius-sm); }
-.data-table tbody tr { transition: background .12s ease; }
-.data-table tbody tr:hover { background: var(--peach-50); }
+.data-table tbody tr { transition: background .12s ease, box-shadow .12s ease; }
+/* Plus franchement bleu que le survol d'origine (--peach-50, à peine visible) :
+   on doit voir d'un coup d'œil sur quelle ligne (bénéficiaire, formation...) on
+   se trouve. Liseré à gauche en plus du fond pour que ça saute aux yeux même
+   avec beaucoup de lignes très proches visuellement. */
+.data-table tbody tr:hover { background: var(--peach-200); box-shadow: inset 3px 0 0 var(--brand); }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table a { color: var(--brand-ink); text-decoration: none; font-size: 13px; font-weight: 650; }
 .data-table a:hover { text-decoration: underline; }
@@ -792,7 +796,7 @@ a { color: inherit; }
 .recherche-benef-resultats li {
     padding: 11px 6px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background .12s ease;
 }
-.recherche-benef-resultats li:hover, .recherche-benef-resultats li:focus { background: var(--peach-50); outline: none; }
+.recherche-benef-resultats li:hover, .recherche-benef-resultats li:focus { background: var(--peach-200); outline: none; }
 .recherche-benef-resultats li.recherche-benef-vide { color: var(--ink-muted); cursor: default; text-align: center; padding: 20px 6px; }
 .recherche-benef-resultats li.recherche-benef-vide:hover { background: none; }
 
