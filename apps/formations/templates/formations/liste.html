@@ -4,7 +4,7 @@
 <div class="hero">
     <div>
         <h1>Formations</h1>
-        <p>{{ page_obj.paginator.count }} formation(s) &middot; {{ nb_achevees }} achevée(s) &middot; {{ nb_en_cours }} en cours &middot; {{ nb_abandonnees }} abandonnée(s)</p>
+        <p>{{ page_obj.paginator.count }} formation(s) &middot; {{ nb_achevees }} achevée(s) &middot; {{ nb_en_cours }} en cours &middot; {{ nb_abandonnees }} abandonnée(s) &middot; {{ nb_echecs }} échec(s)</p>
     </div>
     {% if user.profile.is_saisie %}
     <a href="{% url 'formations:creer' %}" class="primary-button">+ Nouvelle formation</a>
@@ -80,7 +80,7 @@
                 <td>{{ f.centre|default:"-" }}</td>
                 <td>{{ f.date_debut }}</td>
                 <td>{{ f.date_fin|default:"-" }}</td>
-                <td>{{ f.get_statut_formation_display }}</td>
+                <td><span class="badge {% if f.statut_formation == 'achevee' %}badge-good{% elif f.statut_formation == 'abandonnee' %}badge-critical{% elif f.statut_formation == 'echec' %}badge-warning{% else %}badge-neutre{% endif %}">{{ f.get_statut_formation_display }}</span></td>
                 <td>
                     {% if user.profile.is_saisie or user.profile.is_validateur %}
                     <a href="{% url 'formations:modifier' f.pk %}">Modifier</a>

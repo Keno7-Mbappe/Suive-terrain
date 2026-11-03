@@ -116,7 +116,7 @@
                 <td><span class="badge badge-institution" data-institution="{{ b.institution.type }}">{{ b.institution }}</span></td>
                 <td>{{ b.telephone|default:"-" }}</td>
                 <td>{{ b.date_enregistrement }}</td>
-                <td>{{ b.get_statut_display }}</td>
+                <td><span class="badge {% if b.statut == 'actif' %}badge-good{% elif b.statut == 'abandon' %}badge-critical{% else %}badge-neutral{% endif %}">{{ b.get_statut_display }}</span></td>
                 <td>{% if b.est_refugie %}<span class="badge badge-neutre">{{ b.get_pays_origine_display|default:"Oui" }}</span>{% else %}-{% endif %}</td>
                 <td>{% if b.situation_handicap %}<span class="badge badge-neutre">{{ b.get_type_handicap_display|default:"Oui" }}</span>{% else %}-{% endif %}</td>
                 <td>

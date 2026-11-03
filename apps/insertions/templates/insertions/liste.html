@@ -66,7 +66,7 @@
             {% for i in insertions %}
             <tr>
                 <td>{{ i.beneficiaire }}</td>
-                <td>{{ i.get_situation_prof_display }}</td>
+                <td><span class="badge {% if i.situation_prof == 'emploi_salarie' or i.situation_prof == 'auto_emploi' %}badge-good{% elif i.situation_prof == 'en_recherche' %}badge-warning{% else %}badge-neutre{% endif %}">{{ i.get_situation_prof_display }}</span></td>
                 <td>{{ i.date_insertion }}</td>
                 <td>{{ i.delai_insertion_mois|default:"-" }}</td>
                 <td>

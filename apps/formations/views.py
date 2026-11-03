@@ -49,6 +49,7 @@ class FormationListView(RoleRequiredMixin, InstitutionScopedQuerysetMixin, ListV
         context["nb_achevees"] = repartition.get("achevee", 0)
         context["nb_en_cours"] = repartition.get("en_cours", 0)
         context["nb_abandonnees"] = repartition.get("abandonnee", 0)
+        context["nb_echecs"] = repartition.get("echec", 0)
         context["recherche"] = self.recherche
         context["filtre_domaine"] = self.filtre_domaine
         context["filtre_centre"] = self.filtre_centre
