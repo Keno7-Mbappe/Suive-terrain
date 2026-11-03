@@ -10,9 +10,12 @@
 
     /* surfaces */
     --canvas:      #F3E7D4;
-    --sidebar:     #FFFDFB;
-    --surface:     #FFFAF2;
-    --surface-2:   #FBF8F4;
+    /* blanc casse assume (pas blanc pur) : fait mieux ressortir le bleu de
+       marque par contraste - reste plus clair que --canvas pour que les
+       cartes se detachent toujours visiblement de la page. */
+    --sidebar:     #FAF3E7;
+    --surface:     #F8EFE1;
+    --surface-2:   #F5EBDB;
     --border:      #F0E8DD;
     --border-strong: #E6DACB;
     --shadow-sm:   0 1px 2px rgba(120,80,40,.05), 0 4px 14px -8px rgba(120,80,40,.12);
