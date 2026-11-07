@@ -7,6 +7,10 @@ REGIONS = [
     ("dikhil", "Dikhil"),
     ("tadjourah", "Tadjourah"),
     ("obock", "Obock"),
+    # Région précise non fournie par certaines listes (ex. stagiaires INAP/ANEFIP en
+    # entreprise) : le fichier source ne donne que "Régions de l'intérieur" plutôt que
+    # l'une des 5 régions ci-dessus - distinct de Djibouti plutôt que d'y être mélangé.
+    ("regions_interieur", "Régions de l'intérieur"),
 ]
 
 TYPES_INSTITUTION = [

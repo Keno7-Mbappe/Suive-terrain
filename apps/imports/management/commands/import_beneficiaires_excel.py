@@ -16,13 +16,21 @@ Colonnes attendues :
   date_naissance (AAAA-MM-JJ), age_declare (ignoré, recalculé), quartier,
   region, niveau_etude, telephone_1, id_institution (code : DGFP/INAP/ANEFIP),
   statut ("formé" -> Formation.statut_formation="achevee" ; toute autre
-  valeur -> "en_cours", cf. STATUT_VERS_FORMATION).
+  valeur -> "en_cours", cf. STATUT_VERS_FORMATION), refugie (Oui/Non,
+  optionnel), handicape (Oui/Non, optionnel).
 - Feuille "formations" : id_formation (ignoré), id_beneficiaire, filiere,
-  centre, date_debut, date_fin.
+  centre, date_debut, date_fin, statut (optionnel - cf. STATUT_VERS_FORMATION ;
+  si absent ou vide, le statut du bénéficiaire ci-dessus s'applique à toutes
+  ses formations, comme avant).
 - Feuille "Certificat" (optionnelle) : id_certificat (ignoré), id_beneficiaire,
   filiere (-> Certification.type_certificat), centre (ignoré), date_certificat.
   Une ligne sans bénéficiaire correspondant, sans filière ou sans date est
   ignorée (compte-rendu en fin d'import) plutôt que de faire planter l'import.
+
+Institution inconnue (code absent de Institution.TYPES_INSTITUTION, ex. un
+libellé combiné "INAP/ANEFIP" désignant un programme conjoint non modélisé) :
+le bénéficiaire est ignoré plutôt que de faire planter tout l'import, avec un
+compte-rendu en fin d'import pour un traitement manuel ultérieur.
 
 Dédoublonnage : comme pour l'import legacy, sur (nom, prénom, date de
 naissance), restreint à l'institution importée - un ré-import du même fichier
@@ -41,6 +49,7 @@ automatiquement plutôt que de faire échouer tout l'import.
 """
 
 import time
+from collections import Counter
 from pathlib import Path
 
 import openpyxl
@@ -79,15 +88,29 @@ REGION_PAR_LIBELLE = {
     "dikhil": "dikhil",
     "tadjourah": "tadjourah",
     "obock": "obock",
+    "régions de l'intérieur": "regions_interieur",
 }
 
 STATUT_VERS_FORMATION = {
     "formé": "achevee",
     "forme": "achevee",
+    "achevee": "achevee",
+    "achevée": "achevee",
     "abandonné": "abandonnee",
     "abandonne": "abandonnee",
+    "abandon": "abandonnee",
+    "abandonnee": "abandonnee",
+    "échec": "echec",
+    "echec": "echec",
     "en cours": "en_cours",
+    "en_cours": "en_cours",
 }
+
+VALEURS_OUI = {"oui", "o", "yes", "y", "true", "1"}
+
+
+def _est_oui(valeur):
+    return str(valeur or "").strip().lower() in VALEURS_OUI
 
 
 def _decouper_nom_complet(nom_complet):
@@ -131,6 +154,7 @@ class Command(BaseCommand):
         total = 0
         sans_sexe = 0
         sans_date_naissance = 0
+        institutions_inconnues = Counter()
         for ligne in feuille.iter_rows(min_row=2, values_only=True):
             if not any(ligne):
                 continue
@@ -138,14 +162,15 @@ class Command(BaseCommand):
             id_source = donnees["id_beneficiaire"]
             code_institution = (donnees.get("id_institution") or "").strip().lower()
 
-            def importer_cette_ligne(donnees=donnees, id_source=id_source, code_institution=code_institution):
-                try:
-                    institution = Institution.objects.get(type=code_institution)
-                except Institution.DoesNotExist:
-                    raise CommandError(
-                        f"Institution '{donnees.get('id_institution')}' inconnue (bénéficiaire {id_source})."
-                    )
+            try:
+                institution = Institution.objects.get(type=code_institution)
+            except Institution.DoesNotExist:
+                # Libellé combiné (ex. "INAP/ANEFIP") ou institution non modélisée : ignoré
+                # plutôt que de faire planter tout l'import pour les lignes valides restantes.
+                institutions_inconnues[donnees.get("id_institution") or "(vide)"] += 1
+                continue
 
+            def importer_cette_ligne(donnees=donnees, institution=institution):
                 nom, prenom = _decouper_nom_complet(donnees["nom_complet"])
                 region_code = REGION_PAR_LIBELLE.get((donnees.get("region") or "").strip().lower(), "djibouti")
 
@@ -168,6 +193,8 @@ class Command(BaseCommand):
                 beneficiaire.niveau_etude = (donnees.get("niveau_etude") or "").strip()
                 beneficiaire.institution = institution
                 beneficiaire.telephone = str(donnees.get("telephone_1") or "").strip()
+                beneficiaire.est_refugie = _est_oui(donnees.get("refugie"))
+                beneficiaire.situation_handicap = _est_oui(donnees.get("handicape"))
                 # Pas de date d'enregistrement dans le fichier source : la date de
                 # naissance seule ne suffit pas a calculer une tranche d'age fiable
                 # au moment de l'inscription, donc on utilisera la date de debut de
@@ -193,6 +220,12 @@ class Command(BaseCommand):
                 f"  dont {sans_sexe} sans sexe renseigné et {sans_date_naissance} sans date de naissance "
                 "(laissés non renseignés plutôt qu'inventés)."
             ))
+        if institutions_inconnues:
+            total_ignores = sum(institutions_inconnues.values())
+            self.stdout.write(self.style.WARNING(
+                f"  {total_ignores} bénéficiaire(s) ignoré(s) (institution non reconnue) : "
+                f"{dict(institutions_inconnues)}."
+            ))
         return mapping, statuts
 
     def _importer_formations(self, feuille, beneficiaires_par_id, statuts_par_id):
@@ -213,14 +246,24 @@ class Command(BaseCommand):
             if not donnees.get("filiere"):
                 sans_filiere += 1
 
-            def importer_cette_formation(donnees=donnees, beneficiaire=beneficiaire, id_source=id_source):
+            # Statut par formation (ex. fichier stagiaires : achevee/en_cours/abandon par
+            # ligne) prioritaire sur le statut du bénéficiaire (feuille "beneficiaires")
+            # quand la colonne existe et est renseignée - sinon comportement inchangé.
+            statut_formation = statuts_par_id.get(id_source, "en_cours")
+            statut_ligne = (donnees.get("statut") or "").strip().lower()
+            if statut_ligne:
+                statut_formation = STATUT_VERS_FORMATION.get(statut_ligne, statut_formation)
+
+            def importer_cette_formation(
+                donnees=donnees, beneficiaire=beneficiaire, statut_formation=statut_formation,
+            ):
                 Formation.objects.update_or_create(
                     beneficiaire=beneficiaire, domaine=(donnees.get("filiere") or "").strip(),
                     date_debut=donnees["date_debut"],
                     defaults={
                         "centre": (donnees.get("centre") or "").strip(),
                         "date_fin": donnees.get("date_fin"),
-                        "statut_formation": statuts_par_id.get(id_source, "en_cours"),
+                        "statut_formation": statut_formation,
                     },
                 )
                 # La date d'enregistrement du beneficiaire est alignee sur le debut
