@@ -83,7 +83,15 @@
                         <option value="non" {% if filtre_handicap == "non" %}selected{% endif %}>Sans situation de handicap</option>
                     </select>
                 </div>
-                {% if filtre_region or filtre_sexe or filtre_certification or filtre_refugie or filtre_handicap %}
+                <div class="filter-field">
+                    <label for="stagiaire">Stagiaires</label>
+                    <select name="stagiaire" id="stagiaire" onchange="this.form.submit()">
+                        <option value="">Tous</option>
+                        <option value="oui" {% if filtre_stagiaire == "oui" %}selected{% endif %}>Stagiaires</option>
+                        <option value="non" {% if filtre_stagiaire == "non" %}selected{% endif %}>Hors stage</option>
+                    </select>
+                </div>
+                {% if filtre_region or filtre_sexe or filtre_certification or filtre_refugie or filtre_handicap or filtre_stagiaire %}
                 <a href="?{% if filtre_cycle %}cycle={{ filtre_cycle }}&{% endif %}{% if filtre_institution %}institution={{ filtre_institution }}&{% endif %}{% if filtre_domaine %}domaine={{ filtre_domaine }}&{% endif %}" class="reset-link">&times; Réinitialiser</a>
                 {% endif %}
             </form>

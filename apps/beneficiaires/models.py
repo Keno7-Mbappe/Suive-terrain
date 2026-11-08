@@ -79,6 +79,10 @@ class Beneficiaire(models.Model):
     email = models.EmailField("E-mail", blank=True)
     date_enregistrement = models.DateField("Date d'enregistrement", default=date.today)
     statut = models.CharField("Statut", max_length=20, choices=STATUTS, default="actif")
+    # Distingue les stagiaires (listes nominatives au statut source "stagiaire", ex.
+    # PDCED-Skills_stagiaires-liste-consolidee) des bénéficiaires des listes de formation
+    # classiques - une personne peut être l'un ou l'autre selon la liste qui l'a importée.
+    est_stagiaire = models.BooleanField("Stagiaire", default=False)
 
     est_refugie = models.BooleanField("Réfugié", default=False)
     pays_origine = models.CharField(

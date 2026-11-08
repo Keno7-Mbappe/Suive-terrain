@@ -16,8 +16,9 @@ Colonnes attendues :
   date_naissance (AAAA-MM-JJ), age_declare (ignoré, recalculé), quartier,
   region, niveau_etude, telephone_1, id_institution (code : DGFP/INAP/ANEFIP),
   statut ("formé" -> Formation.statut_formation="achevee" ; toute autre
-  valeur -> "en_cours", cf. STATUT_VERS_FORMATION), refugie (Oui/Non,
-  optionnel), handicape (Oui/Non, optionnel).
+  valeur -> "en_cours", cf. STATUT_VERS_FORMATION ; valeur littérale "stagiaire"
+  -> Beneficiaire.est_stagiaire=True, ex. liste PDCED-Skills_stagiaires-liste-
+  consolidee), refugie (Oui/Non, optionnel), handicape (Oui/Non, optionnel).
 - Feuille "formations" : id_formation (ignoré), id_beneficiaire, filiere,
   centre, date_debut, date_fin, statut (optionnel - cf. STATUT_VERS_FORMATION ;
   si absent ou vide, le statut du bénéficiaire ci-dessus s'applique à toutes
@@ -195,6 +196,7 @@ class Command(BaseCommand):
                 beneficiaire.telephone = str(donnees.get("telephone_1") or "").strip()
                 beneficiaire.est_refugie = _est_oui(donnees.get("refugie"))
                 beneficiaire.situation_handicap = _est_oui(donnees.get("handicape"))
+                beneficiaire.est_stagiaire = (donnees.get("statut") or "").strip().lower() == "stagiaire"
                 # Pas de date d'enregistrement dans le fichier source : la date de
                 # naissance seule ne suffit pas a calculer une tranche d'age fiable
                 # au moment de l'inscription, donc on utilisera la date de debut de
