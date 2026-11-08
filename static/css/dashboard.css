@@ -573,12 +573,12 @@ a { color: inherit; }
     .pill-alerte { padding: 5px 10px 5px 6px; font-size: 11px; }
     .pill-alerte b { min-width: 20px; height: 20px; font-size: 11px; }
     .dash-tools { gap: 6px; }
-    /* Grille fixe a 4 colonnes plutot que le flex-wrap d'origine : avec 8 champs,
-       le flex-wrap renvoyait la ligne a la ligne suivante (observe en prod : le
-       8e champ, Handicap, atterrissait seul, plaque a droite, desaligne des
-       autres). Une grille garantit 2 rangees completes et alignees quel que
-       soit le nombre de champs actifs. */
-    .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px 18px; width: 100%; }
+    /* Grille fixe a 5 colonnes plutot que le flex-wrap d'origine : avec 9 champs
+       (depuis l'ajout du filtre Stagiaires), le flex-wrap renvoyait la ligne a
+       la ligne suivante (observe en prod : le 9e champ, Stagiaires, atterrissait
+       seul, plaque a droite, desaligne des autres, sur une 3e rangee). Une
+       grille a 5 colonnes garantit 2 rangees completes et alignees (5 + 4). */
+    .filters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px 14px; width: 100%; }
     .filters > .reset-link { grid-column: 1 / -1; justify-self: end; height: auto; font-size: 11px; }
     .filter-field { display: flex; align-items: center; gap: 6px; }
     .filter-field label { margin-bottom: 0; font-size: 9.5px; white-space: nowrap; }
